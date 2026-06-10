@@ -91,3 +91,8 @@
   display: inline-block;
   animation: iz-pulse var(--motion-mid) ease-out;
 }
+
+/* ── Suppress scrollbar styling on horizontal-scroll regions (e.g. activity grid) ── */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
