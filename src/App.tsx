@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { TopNav } from './components/TopNav'
 import { ComingSoon } from './components/ComingSoon'
+import { HelpOverlay } from './components/HelpOverlay'
 import PullupPage from './pages/PullupPage'
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
             <Route path="*" element={<Navigate to="/pullups" replace />} />
           </Routes>
         </main>
+        <HelpOverlay />
       </div>
     </BrowserRouter>
   )
