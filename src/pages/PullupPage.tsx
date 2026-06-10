@@ -1,28 +1,7 @@
 import { HeroChallengeCard } from '../components/HeroChallengeCard'
 import { TodaysSetsCard } from '../components/TodaysSetsCard'
+import { StatsCard } from '../components/StatsCard'
 import { ActivityGrid } from '../components/ActivityGrid'
-
-function PlaceholderCard({
-  eyebrow,
-  title,
-  className,
-}: {
-  eyebrow: string
-  title: string
-  className?: string
-}) {
-  return (
-    <div
-      className={
-        'border border-[var(--border)] rounded-[var(--radius)] bg-[var(--surface)] px-7 py-6 ' +
-        (className ?? '')
-      }
-    >
-      <span className="iz-label">{eyebrow}</span>
-      <h2 className="iz-display text-xl text-[var(--text)] mt-2">{title}</h2>
-    </div>
-  )
-}
 
 export default function PullupPage() {
   return (
@@ -30,7 +9,7 @@ export default function PullupPage() {
       <HeroChallengeCard />
       <TodaysSetsCard />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <PlaceholderCard eyebrow="Stats" title="Streak & averages" />
+        <StatsCard />
         <div className="lg:col-span-2">
           <ActivityGrid />
         </div>
