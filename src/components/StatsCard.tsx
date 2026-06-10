@@ -12,7 +12,7 @@ type Stat = {
 
 function StatCell({ label, value, unit, accent }: Stat) {
   return (
-    <div className="rounded-[10px] bg-white/[0.02] border border-[var(--border)] px-4 py-3">
+    <div className="flex flex-col justify-center rounded-[10px] bg-white/[0.02] border border-[var(--border)] px-4 py-4">
       <span className="iz-label block leading-tight">{label}</span>
       <div className="flex items-baseline gap-1.5 mt-2">
         <span
@@ -58,7 +58,7 @@ export function StatsCard() {
   ]
 
   return (
-    <div className="border border-[var(--border)] rounded-[var(--radius)] bg-[var(--surface)] px-7 py-6">
+    <div className="flex flex-col h-full border border-[var(--border)] rounded-[var(--radius)] bg-[var(--surface)] px-7 py-6">
       {/* Eyebrow */}
       <div className="flex items-center gap-2">
         <span
@@ -73,8 +73,8 @@ export function StatsCard() {
         </span>
       </div>
 
-      {/* 2×2 grid */}
-      <div className="grid grid-cols-2 gap-4 mt-4">
+      {/* 2×2 grid — grows to fill the card so it balances the taller ActivityGrid */}
+      <div className="grid grid-cols-2 grid-rows-2 gap-4 mt-4 flex-1">
         {cells.map((c) => (
           <StatCell key={c.label} {...c} />
         ))}
