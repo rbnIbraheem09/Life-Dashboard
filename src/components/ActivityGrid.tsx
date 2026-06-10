@@ -50,6 +50,10 @@ const FUTURE_CLASS = 'bg-white/[0.02] opacity-50'
 
 const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
+// Fixed cell size — keeps monthly + yearly views visually uniform
+// (without this, the 5-col month grid stretches cells to ~6x the yearly size).
+const CELL = 'w-[14px] h-[14px] max-w-[14px] max-h-[14px]'
+
 // Build the current month as a column-major flat array (index = col * 7 + row),
 // padded with null cells before the 1st / after the last so weeks align Mon-first.
 function buildMonth(year: number, month: number): { cells: Cell[]; cols: number } {
@@ -120,7 +124,7 @@ export function ActivityGrid() {
   function renderCell(cell: Cell, i: number) {
     if (!cell.key) {
       // Padding cell (before the 1st / after the last) — invisible.
-      return <div key={`pad-${i}`} className="aspect-square rounded-sm bg-transparent" />
+      return <div key={`pad-${i}`} className={cn(CELL, 'rounded-sm bg-transparent')} />
     }
 
     const entry = days[cell.key]
@@ -138,7 +142,8 @@ export function ActivityGrid() {
           setCount === 1 ? 'set' : 'sets'
         }`}
         className={cn(
-          'aspect-square rounded-sm',
+          CELL,
+          'rounded-sm',
           colorClass,
           isToday && 'border border-[var(--accent-2)]'
         )}
@@ -182,10 +187,10 @@ export function ActivityGrid() {
       <h3 className="iz-display text-xl text-[var(--text)] mb-4">{periodLabel}</h3>
 
       {/* Day labels + grid */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 overflow-x-auto">
         <div
           className="grid gap-[3px] shrink-0"
-          style={{ gridTemplateRows: `repeat(${ROWS}, minmax(0, 1fr))` }}
+          style={{ gridTemplateRows: `repeat(${ROWS}, 14px)` }}
         >
           {DAY_LABELS.map((d, i) => (
             <span
@@ -197,17 +202,16 @@ export function ActivityGrid() {
           ))}
         </div>
         <div
-          className="grid gap-[3px] flex-1"
+          className="grid gap-[3px]"
           style={{
             gridAutoFlow: 'column',
-            gridTemplateRows: `repeat(${ROWS}, minmax(0, 1fr))`,
-            gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+            gridTemplateRows: `repeat(${ROWS}, 14px)`,
+            gridTemplateColumns: `repeat(${cols}, 14px)`,
           }}
         >
           {cells.map(renderCell)}
         </div>
       </div>
-
       {/* Legend */}
       <div className="flex items-center gap-1.5 mt-4">
         <span className="text-[10px] text-[var(--text-muted)]">less</span>
