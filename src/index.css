@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Design tokens (locked — copied verbatim from IMPLEMENTATION_PLAN.md §2) ── */
+:root {
+  --bg: #06040C;
+  --surface: #0E0B18;
+  --text: #E8E4F0;
+  --text-dim: #A1A1AA;
+  --text-muted: #71717A;
+  --border: rgba(255, 255, 255, 0.06);
+  --border-active: rgba(167, 139, 250, 0.25);
+  --accent-1: #C4B5FD; /* violet — primary */
+  --accent-2: #F472B6; /* pink — mid */
+  --accent-3: #FBBF24; /* amber — end, warning */
+  --radius: 14px;
+  --font-display: 'Fraunces', serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  /* motion */
+  --motion-fast: 120ms;
+  --motion-mid: 200ms;
+}
+
+/* ── Base ── */
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Tame the default focus ring into the accent palette */
+  :focus-visible {
+    outline: 1px solid var(--border-active);
+    outline-offset: 2px;
+  }
+}
+
+/* ── Three-font utility classes (mirrors IznicOS) ── */
+@layer components {
+  .iz-display {
+    font-family: var(--font-display);
+    font-weight: 300;
+    letter-spacing: -0.01em;
+  }
+
+  .iz-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--text-muted);
+  }
+
+  .iz-mono {
+    font-family: var(--font-mono);
+    font-weight: 400;
+  }
+}
+
+/* ── Animations ── */
+/* Per-set number pulse: fires when a set's reps change (Phase 3). */
+@keyframes iz-pulse {
+  0% {
+    transform: scale(1);
+    color: var(--text);
+  }
+  35% {
+    transform: scale(1.28);
+    color: var(--accent-1);
+  }
+  100% {
+    transform: scale(1);
+    color: var(--text);
+  }
+}
+
+.iz-pulse {
+  display: inline-block;
+  animation: iz-pulse var(--motion-mid) ease-out;
+}
