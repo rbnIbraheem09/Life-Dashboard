@@ -1,3 +1,4 @@
+import { HeroChallengeCard } from '../components/HeroChallengeCard'
 import { TodaysSetsCard } from '../components/TodaysSetsCard'
 
 function PlaceholderCard({
@@ -25,7 +26,7 @@ function PlaceholderCard({
 export default function PullupPage() {
   return (
     <div className="max-w-[1180px] mx-auto px-9 py-9 flex flex-col gap-6">
-      <PlaceholderCard eyebrow="Pullup Challenge" title="100 reps / day" />
+      <HeroChallengeCard />
       <TodaysSetsCard />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <PlaceholderCard eyebrow="Stats" title="Streak & averages" />
