@@ -1,5 +1,6 @@
 import { HeroChallengeCard } from '../components/HeroChallengeCard'
 import { TodaysSetsCard } from '../components/TodaysSetsCard'
+import { ActivityGrid } from '../components/ActivityGrid'
 
 function PlaceholderCard({
   eyebrow,
@@ -30,11 +31,9 @@ export default function PullupPage() {
       <TodaysSetsCard />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <PlaceholderCard eyebrow="Stats" title="Streak & averages" />
-        <PlaceholderCard
-          eyebrow="Activity · 2026"
-          title="Yearly grid"
-          className="lg:col-span-2"
-        />
+        <div className="lg:col-span-2">
+          <ActivityGrid />
+        </div>
       </div>
     </div>
   )
