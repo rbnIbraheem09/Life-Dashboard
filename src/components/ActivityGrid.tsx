@@ -11,6 +11,7 @@ import {
 import { useDashboard } from '../store/dashboard'
 import { dateKey, todayKey } from '../lib/date'
 import { cn } from '../lib/cn'
+import { DayDrawer } from './DayDrawer'
 import type { DayEntry } from '../types'
 
 // Stable empty reference so the selector output is referentially stable.
@@ -106,6 +107,7 @@ function pillClass(active: boolean): string {
 
 export function ActivityGrid() {
   const [view, setView] = useState<View>('month')
+  const [openDate, setOpenDate] = useState<string | null>(null)
   const days = useDashboard((s) => s.data.challenges.pullups.days ?? EMPTY)
   const goal = useDashboard((s) => s.data.challenges.pullups.goalPerDay)
 
@@ -136,14 +138,16 @@ export function ActivityGrid() {
     const colorClass = isFuture ? FUTURE_CLASS : LEVEL_CLASSES[cellLevel(reps, goal)]
 
     return (
-      <div
+      <button
+        type="button"
         key={cell.key}
+        onClick={() => setOpenDate(cell.key)}
         title={`${cell.key} · ${reps} reps · ${setCount} ${
           setCount === 1 ? 'set' : 'sets'
         }`}
         className={cn(
           CELL,
-          'rounded-sm',
+          'rounded-sm cursor-pointer hover:ring-1 hover:ring-[var(--accent-1)] transition-shadow duration-[var(--motion-fast)]',
           colorClass,
           isToday && 'border border-[var(--accent-2)]'
         )}
@@ -220,6 +224,8 @@ export function ActivityGrid() {
         ))}
         <span className="text-[10px] text-[var(--text-muted)]">more</span>
       </div>
+
+      <DayDrawer openDate={openDate} onClose={() => setOpenDate(null)} />
     </div>
   )
 }
