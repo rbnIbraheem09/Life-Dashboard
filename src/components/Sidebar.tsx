@@ -1,6 +1,7 @@
 import { useRef } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useDashboard } from '../store/dashboard'
+import { ScrollArea } from './ScrollArea'
 import { cn } from '../lib/cn'
 
 /* ── Page icons (16×16, 1.5px stroke, currentColor — no icon library) ── */
@@ -137,7 +138,8 @@ export function Sidebar() {
       </div>
 
       {/* Pages section — flex-1 so it claims all the space between brand and footer. */}
-      <div className="px-3 pt-2 pb-3 flex-1 min-h-0 overflow-y-auto sidebar-scroll">
+      <div className="px-3 pt-2 pb-3 flex-1 min-h-0">
+        <ScrollArea className="h-full w-full">
         <div className="flex items-center gap-2 px-2 mb-2">
           <span className="iz-label">Pages</span>
           <div className="flex-1 h-px bg-[var(--border)]" />
@@ -162,6 +164,7 @@ export function Sidebar() {
             </NavLink>
           ))}
         </nav>
+        </ScrollArea>
       </div>
 
       {/* Footer — export / import. */}

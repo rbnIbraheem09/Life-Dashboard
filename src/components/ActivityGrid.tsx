@@ -12,6 +12,7 @@ import { useDashboard } from '../store/dashboard'
 import { dateKey, todayKey } from '../lib/date'
 import { cn } from '../lib/cn'
 import { DayDrawer } from './DayDrawer'
+import { ScrollArea } from './ScrollArea'
 import type { DayEntry } from '../types'
 
 // Stable empty reference so the selector output is referentially stable.
@@ -191,31 +192,33 @@ export function ActivityGrid() {
       <h3 className="iz-display text-xl text-[var(--text)] mb-4">{periodLabel}</h3>
 
       {/* Day labels + grid */}
-      <div className="flex gap-2 overflow-x-auto">
-        <div
-          className="grid gap-[3px] shrink-0"
-          style={{ gridTemplateRows: `repeat(${ROWS}, 14px)` }}
-        >
-          {DAY_LABELS.map((d, i) => (
-            <span
-              key={i}
-              className="iz-mono text-[10px] text-[var(--text-muted)] flex items-center"
-            >
-              {d}
-            </span>
-          ))}
+      <ScrollArea direction="horizontal" className="w-full">
+        <div className="flex gap-2 pb-2">
+          <div
+            className="grid gap-[3px] shrink-0"
+            style={{ gridTemplateRows: `repeat(${ROWS}, 14px)` }}
+          >
+            {DAY_LABELS.map((d, i) => (
+              <span
+                key={i}
+                className="iz-mono text-[10px] text-[var(--text-muted)] flex items-center"
+              >
+                {d}
+              </span>
+            ))}
+          </div>
+          <div
+            className="grid gap-[3px]"
+            style={{
+              gridAutoFlow: 'column',
+              gridTemplateRows: `repeat(${ROWS}, 14px)`,
+              gridTemplateColumns: `repeat(${cols}, 14px)`,
+            }}
+          >
+            {cells.map(renderCell)}
+          </div>
         </div>
-        <div
-          className="grid gap-[3px]"
-          style={{
-            gridAutoFlow: 'column',
-            gridTemplateRows: `repeat(${ROWS}, 14px)`,
-            gridTemplateColumns: `repeat(${cols}, 14px)`,
-          }}
-        >
-          {cells.map(renderCell)}
-        </div>
-      </div>
+      </ScrollArea>
       {/* Legend */}
       <div className="flex items-center gap-1.5 mt-4">
         <span className="text-[10px] text-[var(--text-muted)]">less</span>

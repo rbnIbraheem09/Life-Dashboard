@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { useDashboard } from '../store/dashboard'
+import { ScrollArea } from './ScrollArea'
 import { cn } from '../lib/cn'
 import type { PullupSet } from '../types'
 
@@ -99,11 +100,13 @@ export function DayDrawer({
         aria-modal="true"
         aria-hidden={!open}
         className={cn(
-          'fixed right-0 top-0 h-full w-full sm:w-[420px] bg-[var(--surface)] border-l border-[var(--border)] z-50 p-7 overflow-y-auto',
+          'fixed right-0 top-0 h-full w-full sm:w-[420px] bg-[var(--surface)] border-l border-[var(--border)] z-50 flex flex-col',
           'transition-transform duration-[var(--motion-mid)] ease-out',
           open ? 'translate-x-0' : 'translate-x-full'
         )}
       >
+        <ScrollArea className="h-full w-full">
+          <div className="p-7">
         {/* Eyebrow + close */}
         <div className="flex items-center gap-2 mb-5">
           <span
@@ -227,6 +230,8 @@ export function DayDrawer({
             + Add
           </button>
         </form>
+          </div>
+        </ScrollArea>
       </aside>
     </>
   )

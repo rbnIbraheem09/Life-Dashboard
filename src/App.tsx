@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Sidebar } from './components/Sidebar'
 import { WindowChrome } from './components/WindowChrome'
+import { ScrollArea } from './components/ScrollArea'
 import { ComingSoon } from './components/ComingSoon'
 import { HelpOverlay } from './components/HelpOverlay'
 import PullupPage from './pages/PullupPage'
@@ -95,7 +96,8 @@ export default function App() {
           </div>
         </div>
 
-        <main className="flex-1 overflow-y-auto min-w-0">
+        <main className="flex-1 min-w-0">
+          <ScrollArea className="h-full w-full">
           <Routes>
             <Route path="/" element={<Navigate to="/pullups" replace />} />
             <Route path="/pullups" element={<PullupPage />} />
@@ -107,6 +109,7 @@ export default function App() {
             />
             <Route path="*" element={<Navigate to="/pullups" replace />} />
           </Routes>
+          </ScrollArea>
         </main>
 
         {/* Window-level chrome — traffic lights + sidebar toggle.
