@@ -47,13 +47,12 @@
  * Position math:
  *   The sidebar's wrapper in App.tsx has `p-[10px]` and the
  *   panel inside it has `w-[240px]`. The panel's left edge sits
- *   at x=10px from the window. We park the chrome at left: 18px
- *   so the traffic lights sit 8px inside the panel's left
- *   edge — close enough to read as "inside the panel" when the
- *   panel is open, but with a small, deliberate breathing gap
- *   from the absolute window edge.
- *   The chrome's top: 14px mirrors the side offset and gives
- *   the same inset from the window's top edge.
+ *   at x=10px from the window. We park the chrome at left: 22px
+ *   so the traffic lights sit 12px inside the panel's left
+ *   edge — the same x-offset macOS uses natively (Finder,
+ *   Safari, Notes), so the lights read as native OS chrome,
+ *   not as a custom control glued to the window edge.
+ *   The chrome's top: 14px mirrors the side offset.
  */
 
 import { TrafficLights } from './TrafficLights'
@@ -69,7 +68,7 @@ export function WindowChrome() {
       // because the user is dragging, not selecting text. The
       // lights and the toggle are grouped on the left with a
       // small gap, leaving the rest of the row as drag surface.
-      className="absolute top-[14px] left-[18px] z-30 h-7 flex items-center gap-1.5 select-none"
+      className="absolute top-[14px] left-[22px] z-30 h-7 flex items-center gap-1.5 select-none"
     >
       <TrafficLights />
       <PanelToggle />
