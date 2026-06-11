@@ -100,31 +100,13 @@ export function Sidebar() {
   }
 
   return (
-    /* The <aside> opts out of drag so the nav links and buttons stay clickable.
-       The native macOS title bar (decorations: true + titleBarStyle: "Overlay")
-       is the drag region — the user grabs the top of the window to move it,
-       and our content flows underneath the floating traffic lights. */
-    <aside
-      className="w-[240px] shrink-0 h-full flex flex-col bg-[var(--surface)] border-r border-[var(--border)]"
-      data-tauri-drag-region={false}
-      style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
-    >
-      {/* Brand block — padding-left 100px leaves comfortable breathing room
-          after the macOS traffic lights that overlay the top-left of the
-          window via titleBarStyle: "Overlay". The brand row IS the drag
-          handle (marked data-tauri-drag-region); the OS title bar overlay
-          has its own drag strip, but this row gives us a reliable fallback
-          and matches the visual location the user expects to grab. */}
-      <div
-        className="px-5 pt-3 pb-3 flex items-center gap-2"
-        style={{ paddingLeft: '100px', WebkitAppRegion: 'drag' } as React.CSSProperties}
-        data-tauri-drag-region
-      >
+    <aside className="w-[240px] shrink-0 h-full flex flex-col bg-[var(--surface)] border-r border-[var(--border)]">
+      {/* Brand block */}
+      <div className="px-5 pt-5 pb-3 flex items-center gap-2">
         <span
           className="inline-block w-2 h-2 rounded-full bg-[var(--accent-1)]"
           style={{
-            boxShadow:
-              '0 0 6px 1px color-mix(in srgb, var(--accent-1) 50%, transparent)',
+            boxShadow: '0 0 6px 1px color-mix(in srgb, var(--accent-1) 50%, transparent)',
           }}
         />
         <span className="iz-label" style={{ color: 'var(--accent-1)' }}>
