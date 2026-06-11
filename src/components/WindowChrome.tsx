@@ -19,7 +19,7 @@ export function WindowChrome() {
   // parks it just right of the three lights (trafficLightPosition x:18).
   // Nudge these if alignment is off — they hot-reload.
   return (
-    <div className="absolute top-[12px] left-[82px] z-30">
+    <div className="absolute top-[15px] left-[82px] z-30">
       <PanelToggle />
     </div>
   )
