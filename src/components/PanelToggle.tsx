@@ -85,7 +85,7 @@ function SidebarIcon({ active }: { active: boolean }) {
       strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="w-[15px] h-[15px]"
+      className="w-[17px] h-[17px]"
       aria-hidden="true"
     >
       {/* Outer rectangle (always stroke-only). The rounded
@@ -139,7 +139,7 @@ export function PanelToggle() {
       // without being noisy. The transform transition is
       // motion-fast so the press is felt, not seen.
       className={cn(
-        'w-6 h-6 rounded-md flex items-center justify-center shrink-0',
+        'w-7 h-7 rounded-md flex items-center justify-center shrink-0',
         'transition-colors duration-[var(--motion-fast)] ease-out',
         'active:scale-95 active:bg-white/[0.08]',
         'transition-transform',

@@ -59,7 +59,7 @@ export default function App() {
   function endPeek() {
     if (pinned) return
     if (peekTimer.current !== null) window.clearTimeout(peekTimer.current)
-    peekTimer.current = window.setTimeout(() => setPeeking(false), 140)
+    peekTimer.current = window.setTimeout(() => setPeeking(false), 200)
   }
 
   useEffect(() => {
@@ -135,13 +135,13 @@ export default function App() {
           onMouseLeave={endPeek}
           aria-hidden={!visible}
         >
+          {/* Toggle lives INSIDE the panel so hovering it never fires the
+              panel's mouseleave (which would snap the peek shut). The
+              native traffic lights are OS-drawn at the window's top-left
+              and sit just to its left. */}
+          <WindowChrome />
           <Sidebar />
         </div>
-
-        {/* Window chrome (sidebar toggle). The native traffic lights are
-            OS-drawn at the window's top-left; the toggle rides with the
-            sidebar — visible when it is, hidden when collapsed. */}
-        <WindowChrome visible={visible} />
       </div>
       <HelpOverlay />
     </BrowserRouter>
