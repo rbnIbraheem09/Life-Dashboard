@@ -1,16 +1,108 @@
+use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
+
+/// Returns the app version baked in at compile time (from Cargo.toml).
+/// The only Rust command Phase 2 needs; more arrive in Phase 3.
+#[tauri::command]
+fn app_version() -> String {
+    env!("CARGO_PKG_VERSION").to_string()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-  tauri::Builder::default()
-    .setup(|app| {
-      if cfg!(debug_assertions) {
-        app.handle().plugin(
-          tauri_plugin_log::Builder::default()
-            .level(log::LevelFilter::Info)
-            .build(),
-        )?;
-      }
-      Ok(())
-    })
-    .run(tauri::generate_context!())
-    .expect("error while running tauri application");
+    tauri::Builder::default()
+        .setup(|app| {
+            if cfg!(debug_assertions) {
+                app.handle().plugin(
+                    tauri_plugin_log::Builder::default()
+                        .level(log::LevelFilter::Info)
+                        .build(),
+                )?;
+            }
+
+            // Native macOS menu bar. For Phase 2 the structure is the
+            // deliverable: standard items use PredefinedMenuItem so they work
+            // out of the box; Phase-3 items (New Page / Export / Import /
+            // Reload / DevTools) are scaffolded as inert MenuItems and get
+            // wired to frontend events in Phase 3.
+
+            // App menu — on macOS the first submenu is the bold app menu.
+            let app_menu = Submenu::new(app, "Life-Dashboard", true)?;
+            app_menu.append_items(&[
+                &PredefinedMenuItem::about(app, Some("About Life-Dashboard"), None)?,
+                &PredefinedMenuItem::separator(app)?,
+                &PredefinedMenuItem::hide(app, None)?,
+                &PredefinedMenuItem::hide_others(app, None)?,
+                &PredefinedMenuItem::show_all(app, None)?,
+                &PredefinedMenuItem::separator(app)?,
+                &PredefinedMenuItem::quit(app, Some("Quit Life-Dashboard"))?,
+            ])?;
+
+            let file_menu = Submenu::new(app, "File", true)?;
+            let new_page = MenuItem::with_id(app, "new_page", "New Page", false, None::<&str>)?;
+            let export =
+                MenuItem::with_id(app, "export", "Export Data…", true, Some("CmdOrCtrl+E"))?;
+            let import =
+                MenuItem::with_id(app, "import", "Import Data…", true, Some("CmdOrCtrl+I"))?;
+            file_menu.append_items(&[
+                &new_page,
+                &PredefinedMenuItem::separator(app)?,
+                &export,
+                &import,
+            ])?;
+
+            let edit_menu = Submenu::new(app, "Edit", true)?;
+            edit_menu.append_items(&[
+                &PredefinedMenuItem::undo(app, None)?,
+                &PredefinedMenuItem::redo(app, None)?,
+                &PredefinedMenuItem::separator(app)?,
+                &PredefinedMenuItem::cut(app, None)?,
+                &PredefinedMenuItem::copy(app, None)?,
+                &PredefinedMenuItem::paste(app, None)?,
+                &PredefinedMenuItem::select_all(app, None)?,
+            ])?;
+
+            let view_menu = Submenu::new(app, "View", true)?;
+            let reload = MenuItem::with_id(app, "reload", "Reload", true, Some("CmdOrCtrl+R"))?;
+            let devtools = MenuItem::with_id(
+                app,
+                "devtools",
+                "Toggle DevTools",
+                true,
+                Some("Alt+CmdOrCtrl+I"),
+            )?;
+            view_menu.append_items(&[
+                &reload,
+                &devtools,
+                &PredefinedMenuItem::separator(app)?,
+                &PredefinedMenuItem::fullscreen(app, None)?,
+            ])?;
+
+            let window_menu = Submenu::new(app, "Window", true)?;
+            window_menu.append_items(&[
+                &PredefinedMenuItem::minimize(app, None)?,
+                &PredefinedMenuItem::maximize(app, None)?,
+            ])?;
+
+            let help_menu = Submenu::new(app, "Help", true)?;
+            let help_docs =
+                MenuItem::with_id(app, "help_docs", "Life-Dashboard Help", false, None::<&str>)?;
+            help_menu.append_items(&[&help_docs])?;
+
+            let menu = Menu::with_items(
+                app,
+                &[
+                    &app_menu,
+                    &file_menu,
+                    &edit_menu,
+                    &view_menu,
+                    &window_menu,
+                    &help_menu,
+                ],
+            )?;
+            app.set_menu(menu)?;
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![app_version])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
 }
