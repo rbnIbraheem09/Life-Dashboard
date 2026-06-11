@@ -35,6 +35,15 @@
     height: 100%;
   }
 
+  /* Desktop shell: the document itself never scrolls or bounces. All
+     scrolling happens inside <ScrollArea> (overflow:auto) surfaces.
+     This is what kills the whole-window rubber-band. */
+  html,
+  body {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
   body {
     margin: 0;
     background-color: var(--bg);
@@ -50,15 +59,17 @@
     outline-offset: 2px;
   }
 
-  /* ── Text selection: app chrome is non-selectable; only actual content text is ── */
+  /* Native-app text selection: nothing is selectable by default, so you
+     can't drag-select the window and hovering text shows the arrow
+     cursor (not the I-beam). Only real input fields opt back in. */
   body {
     user-select: none;
     -webkit-user-select: none;
   }
 
-  p, h1, h2, h3, h4, h5, h6,
-  .iz-display, .iz-label, .iz-mono,
-  input, textarea, [contenteditable="true"] {
+  input,
+  textarea,
+  [contenteditable="true"] {
     user-select: text;
     -webkit-user-select: text;
   }
@@ -109,15 +120,17 @@
   animation: iz-pulse var(--motion-mid) ease-out;
 }
 
-/* ── Scrollbars: handled by <ScrollArea> in components/ScrollArea.tsx. ──
-
-   Tauri 2 on macOS pins the WebView to classic scrollbar mode
-   (which ignores `::-webkit-scrollbar` CSS), so styling native
-   scrollbars is a dead end. The architecture decision is: never
-   let the browser draw a native scrollbar. All scrollable
-   surfaces in the app use the <ScrollArea> component, which
-   sets `overflow: hidden` on the viewport (so the OS has no
-   scroll surface to draw on) and renders a thin custom
-   4px pill scrollbar on top.
-
-   No `::-webkit-scrollbar` rules needed here. */
+/* ── Custom scroll surfaces ──
+   <ScrollArea> applies .iz-noscroll to its native overflow container.
+   We draw our own thin thumb, so the native bar must never show. This
+   is the primary hide path; ScrollArea also measures any reserved native
+   bar width at runtime and clips it as a deterministic fallback (so even
+   if a WebView ignores the rule below, no grey bar is ever visible). */
+.iz-noscroll {
+  scrollbar-width: none; /* Firefox */
+}
+.iz-noscroll::-webkit-scrollbar {
+  display: none; /* WebKit / Chromium */
+  width: 0;
+  height: 0;
+}
