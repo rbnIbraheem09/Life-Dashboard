@@ -2,8 +2,6 @@ import { useRef } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useDashboard } from '../store/dashboard'
 import { cn } from '../lib/cn'
-import { TrafficLights } from './TrafficLights'
-import { PanelToggle } from './PanelToggle'
 
 /* ── Page icons (16×16, 1.5px stroke, currentColor — no icon library) ── */
 
@@ -92,21 +90,27 @@ export function Sidebar() {
 
   // The Sidebar renders as a FLOATING PANEL — a card with rounded
   // corners and a drop shadow, with margin all around (10px) so the
-  // window background shows through on every side. The traffic
-  // lights and the panel-toggle button sit inside the panel's top
-  // edge, sharing the same left/right padding (px-5) as the brand
-  // block below, so the visual rhythm is consistent down the panel.
+  // window background shows through on every side.
   //
-  // Because tauri.conf.json uses `titleBarStyle: "Overlay"` and
-  // `trafficLightPosition: { x: -100, y: -100 }` to push the
-  // OS-drawn traffic lights off-screen, the OS doesn't draw
-  // traffic lights — we render them as React buttons (see
-  // TrafficLights.tsx) and call `appWindow.minimize()`,
-  // `maximize()` / `unmaximize()`, and `close()` from them. That
-  // is the only way to get the traffic lights visually inside a
-  // panel that has margin from the window's top-left, while also
-  // keeping the green light's behavior aligned with macOS native
-  // semantics (see TrafficLights.tsx for the maximize fix).
+  // The traffic lights and the panel-toggle button used to live
+  // inside the panel's top edge. They have been promoted to
+  // WindowChrome (see ../components/WindowChrome.tsx), a
+  // window-level absolutely-positioned layer that sits at
+  // (top: 10px, left: 10px, width: 240px) — the exact same
+  // coordinates the panel's old chrome row used to occupy. The
+  // net effect: when the sidebar is open, the chrome visually
+  // reads as the top of the panel (same as before). When the
+  // sidebar is collapsed, the panel slides out and the chrome
+  // stays put — close, minimize, maximize, and the toggle are
+  // always reachable.
+  //
+  // Because the chrome is no longer inside the panel, the brand
+  // block below no longer has to make room for it. We give the
+  // brand block `pt-4` so the visual gap from the panel's top
+  // edge to the brand text is the same as the gap the chrome
+  // used to create (28px chrome + 0px chrome bottom padding =
+  // 28px; we use 16px + the panel's own top inset to land at the
+  // same visual position).
   return (
     <div
       className={cn(
@@ -117,24 +121,10 @@ export function Sidebar() {
         'bg-[var(--surface)]',
       )}
     >
-      {/* Top chrome row — traffic lights on the left, panel toggle on
-          the right. The row is 28px tall (h-7) with px-5 to match the
-          brand block's horizontal padding, and pt-0 because the
-          wrapper's 10px padding already gives the gap from the
-          window's top edge. data-window-drag-zone makes the empty
-          space between the lights and the toggle draggable. The
-          lights and the toggle are <button> elements so the drag
-          hook skips them and the click still fires. */}
-      <div
-        data-window-drag-zone
-        className="h-7 flex items-center justify-between px-5 shrink-0"
-      >
-        <TrafficLights />
-        <PanelToggle />
-      </div>
-
-      {/* Brand block — sits below the chrome row. */}
-      <div className="px-5 pt-3 pb-4 select-none">
+      {/* Brand block — sits at the top of the panel. The chrome
+          (traffic lights + sidebar toggle) is now a window-level
+          layer above this, not a child of the panel. */}
+      <div className="px-5 pt-4 pb-4 select-none">
         <div className="flex items-baseline gap-2">
           <span className="iz-display text-[17px] text-[var(--text)] tracking-tight">
             Life-Dashboard

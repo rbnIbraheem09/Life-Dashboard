@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Sidebar } from './components/Sidebar'
+import { WindowChrome } from './components/WindowChrome'
 import { ComingSoon } from './components/ComingSoon'
 import { HelpOverlay } from './components/HelpOverlay'
 import PullupPage from './pages/PullupPage'
@@ -15,29 +16,36 @@ import { cn } from './lib/cn'
  * modern macOS app with a sidebar.
  *
  *   ┌──────────────────────────────────────────────────────────────┐
- *   │ ┌──────────┐                                                 │
- *   │ │ ●●●  [◀] │                                                 │
- *   │ │          │                                                 │
- *   │ │  Panel   │       <main> (Routes render here)               │
- *   │ │  240px   │                                                 │
- *   │ │          │                                                 │
- *   │ └──────────┘                                                 │
+ *   │ ┌─ chrome (z-30) ─────────────────────────────────────────┐  │
+ *   │ │ ●●●                                            [◀]      │  │ ← WindowChrome:
+ *   │ │                                                          │  │   absolute, always
+ *   │ │                                                          │  │   at top-left of
+ *   │ │ ┌──────────┐                                             │  │   window, never
+ *   │ │ │  Panel   │       <main> (Routes render here)           │  │   collapses with
+ *   │ │ │  240px   │                                             │  │   the sidebar
+ *   │ │ │          │                                             │  │
+ *   │ │ └──────────┘                                             │  │
+ *   │ └──────────────────────────────────────────────────────────┘  │
  *   └──────────────────────────────────────────────────────────────┘
  *     ↑ 10px margin all around (top, right, bottom, left)
  *
- * The chrome row at the top of the panel is the window's drag
- * region. It is `data-window-drag-zone`, so `useWindowDrag` starts
- * a drag from any pointerdown on the empty space between the
- * traffic lights and the panel-toggle. The lights and the toggle
- * themselves are `<button>` elements, so the drag hook skips them
- * and the click still fires.
+ * The WindowChrome is a window-level absolutely-positioned layer
+ * that hosts the traffic lights and the sidebar toggle. It lives
+ * at (top: 10px, left: 10px, width: 240px) regardless of the
+ * sidebar's open/closed state. When the sidebar is open, the
+ * chrome visually sits at the top edge of the panel (same
+ * position it used to occupy when it was a child of the panel).
+ * When the sidebar is collapsed, the panel slides out and the
+ * chrome stays put — close, minimize, maximize, and the toggle
+ * are always reachable.
  *
- * There is no separate TitleStrip above the sidebar. The previous
- * design had a 28px transparent strip above the floating panel
- * that doubled as a drag handle, but that produced a visible gap
- * at the top of the window and conflicted with the
- * "sidebar extends to the top" design. Dropped in favor of the
- * sidebar's own chrome row as the drag handle.
+ * Drag: the chrome carries `data-window-drag-zone`, so the empty
+ * space between the traffic lights and the toggle drags the
+ * window. The buttons themselves opt out via `data-no-drag` (and
+ * via being <button> elements), so clicks still fire. The
+ * brand block and the page nav inside the panel are NOT in the
+ * drag zone, so clicking links inside the panel never starts a
+ * drag.
  *
  * Keyboard: ⌘\ toggles the sidebar. Esc reopens it if hidden.
  */
@@ -62,7 +70,9 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div className="h-full flex overflow-hidden bg-[var(--bg)]">
+      {/* `relative` so WindowChrome's `absolute` positioning
+          anchors to this container, not the document. */}
+      <div className="relative h-full flex overflow-hidden bg-[var(--bg)]">
         {/* SidebarContainer — animates its width. The panel inside
             has its own `overflow-hidden` so the right border is
             clipped as the width approaches 0 (no thin line at the
@@ -98,6 +108,11 @@ export default function App() {
             <Route path="*" element={<Navigate to="/pullups" replace />} />
           </Routes>
         </main>
+
+        {/* Window-level chrome — traffic lights + sidebar toggle.
+            Always visible, always at the top-left of the window,
+            never collapsed with the sidebar. */}
+        <WindowChrome />
       </div>
       <HelpOverlay />
     </BrowserRouter>
