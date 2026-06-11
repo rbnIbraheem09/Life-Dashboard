@@ -1,122 +1,45 @@
 /**
- * useWindowDrag — make specific elements of the app drag the window.
+ * useWindowDrag — drag the window by its top strip, the native way.
  *
- * Why a hook (not CSS `WebkitAppRegion: "drag"`):
- *   Tauri 2's macOS WKWebView handles the `data-tauri-drag-region`
- *   attribute unreliably, especially when nested inside elements
- *   that opt back in with `no-drag`. The official, bulletproof
- *   pattern (per https://v2.tauri.app/learn/window-customization/) is
- *   to call `getCurrentWindow().startDragging()` from a `mousedown`
- *   handler on the drag surface.
+ * A `mousedown` in the top DRAG_HEIGHT px (and not on an interactive
+ * element) calls `getCurrentWindow().startDragging()`, which hands the
+ * drag straight to the macOS window server — instant, native feel, same
+ * as a real title bar.
  *
- * Scope (not whole-window):
- *   We only start a drag when the pointerdown target lives inside an
- *   element marked with `data-window-drag-zone`. Marking is opt-in, so
- *   a card, a button, a nav link, or a scrollable region can NEVER
- *   accidentally start a drag. This is the modern macOS pattern:
- *   the top edge of the sidebar (its chrome row with the traffic
- *   lights and the panel toggle) drags; everything else is fully
- *   interactive.
- *
- * Interactive exclusion:
- *   Even inside a drag zone, clicks on real interactive elements
- *   (links, buttons, inputs) never start a drag.
- *
- * Touch + pen:
- *   We listen on `pointerdown` so touchpads, mice, and pens all
- *   trigger drag uniformly.
- *
- * Double-click:
- *   A real macOS title bar maximizes the window on double-click.
- *   We honor that: a second `pointerdown` within 350ms of the
- *   first flips the maximized state via `toggleMaximize()`,
- *   same as the green traffic light. The earlier iteration
- *   used `isMaximized() + maximize() / unmaximize()` for
- *   "more explicit semantics" — but those calls required
- *   capabilities that weren't granted, so the permission
- *   system silently rejected them. Reverted to
- *   `toggleMaximize()` (which IS in the capability list) and
- *   now surfaces errors via console.warn instead of silently
- *   swallowing them. See TrafficLights.tsx for the full story.
+ * No overlay element is used (an overlay would eat wheel events over the
+ * top strip). The arrow cursor during drag is guaranteed by the global
+ * `user-select: none` in index.css (no selectable text → no I-beam).
  */
-
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { getCurrentWindow } from '@tauri-apps/api/window'
 
-const DRAG_ZONE = '[data-window-drag-zone]'
+/** Title-bar-height grab strip at the top of the window. */
+const DRAG_HEIGHT = 36
 
-// Elements that should never start a drag, even inside a drag zone.
-const INTERACTIVE_SELECTOR = [
-  'a',
-  'button',
-  'input',
-  'textarea',
-  'select',
-  'option',
-  '[role="button"]',
-  '[role="link"]',
-  '[role="checkbox"]',
-  '[role="radio"]',
-  '[role="switch"]',
-  '[role="menuitem"]',
-  '[role="tab"]',
-  '[contenteditable="true"]',
-  '[data-no-drag]',
-].join(',')
-
-function isInteractive(target: EventTarget | null): boolean {
-  if (!(target instanceof Element)) return false
-  let el: Element | null = target
-  while (el) {
-    if (el.matches(INTERACTIVE_SELECTOR)) return true
-    el = el.parentElement
-  }
-  return false
-}
-
-function isInDragZone(target: EventTarget | null): boolean {
-  if (!(target instanceof Element)) return false
-  return target.closest(DRAG_ZONE) !== null
-}
+// Never start a drag from these — clicks must fire normally.
+const NO_DRAG =
+  'button, a, input, textarea, select, [role="button"], [role="dialog"], [data-no-drag]'
 
 export function useWindowDrag() {
-  const lastDownRef = useRef<number>(0)
-
   useEffect(() => {
-    const appWindow = getCurrentWindow()
+    let appWindow: ReturnType<typeof getCurrentWindow> | null = null
+    try {
+      appWindow = getCurrentWindow()
+    } catch {
+      return // browser dev — no Tauri runtime
+    }
 
-    function onPointerDown(e: PointerEvent) {
+    function onMouseDown(e: MouseEvent) {
       if (e.button !== 0) return
-      if (isInteractive(e.target)) return
-      if (!isInDragZone(e.target)) return
-
-      const now = Date.now()
-      const isDouble = now - lastDownRef.current < 350
-      lastDownRef.current = now
-
-      e.preventDefault()
-
-      if (isDouble) {
-        // Same call as the green traffic light — see
-        // TrafficLights.tsx for why we use toggleMaximize
-        // here (capabilities, not API choice).
-        appWindow.toggleMaximize().catch((err) => {
-          // eslint-disable-next-line no-console
-          console.warn('[useWindowDrag] toggleMaximize failed:', err)
-        })
-      } else {
-        appWindow.startDragging().catch((err) => {
-          // eslint-disable-next-line no-console
-          console.warn('[useWindowDrag] startDragging failed:', err)
-        })
-      }
+      if (e.clientY > DRAG_HEIGHT) return
+      const target = e.target as Element | null
+      if (target && target.closest(NO_DRAG)) return
+      appWindow!.startDragging().catch(() => {
+        /* browser dev or transient — ignore */
+      })
     }
 
-    window.addEventListener('pointerdown', onPointerDown, { capture: true })
-    return () => {
-      window.removeEventListener('pointerdown', onPointerDown, {
-        capture: true,
-      } as EventListenerOptions)
-    }
+    document.addEventListener('mousedown', onMouseDown)
+    return () => document.removeEventListener('mousedown', onMouseDown)
   }, [])
 }
