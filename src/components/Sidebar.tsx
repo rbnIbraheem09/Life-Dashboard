@@ -96,21 +96,21 @@ export function Sidebar() {
   // inside the panel's top edge. They have been promoted to
   // WindowChrome (see ../components/WindowChrome.tsx), a
   // window-level absolutely-positioned layer that sits at
-  // (top: 10px, left: 10px, width: 240px) — the exact same
-  // coordinates the panel's old chrome row used to occupy. The
-  // net effect: when the sidebar is open, the chrome visually
-  // reads as the top of the panel (same as before). When the
+  // (top: 14px, left: 14px) — parked just inside the panel's
+  // top-left corner. The net effect: when the sidebar is open,
+  // the chrome visually reads as the top of the panel. When the
   // sidebar is collapsed, the panel slides out and the chrome
   // stays put — close, minimize, maximize, and the toggle are
   // always reachable.
   //
-  // Because the chrome is no longer inside the panel, the brand
-  // block below no longer has to make room for it. We give the
-  // brand block `pt-4` so the visual gap from the panel's top
-  // edge to the brand text is the same as the gap the chrome
-  // used to create (28px chrome + 0px chrome bottom padding =
-  // 28px; we use 16px + the panel's own top inset to land at the
-  // same visual position).
+  // Spacing:
+  //   The chrome row is 28px tall and its bottom edge sits at
+  //   y=42px from the window (top: 14px + h: 28px). The brand
+  //   block uses `pt-9` (36px) on top of the wrapper's 10px
+  //   inset, so the top of the brand text lands at y=46px from
+  //   the window — a clean 4px gap below the chrome row. The
+  //   brand block then uses `pb-4` (16px) before the Pages
+  //   section, matching the rhythm below.
   return (
     <div
       className={cn(
@@ -122,9 +122,11 @@ export function Sidebar() {
       )}
     >
       {/* Brand block — sits at the top of the panel. The chrome
-          (traffic lights + sidebar toggle) is now a window-level
-          layer above this, not a child of the panel. */}
-      <div className="px-5 pt-4 pb-4 select-none">
+          (traffic lights + sidebar toggle) is a window-level
+          layer above this, not a child of the panel. pt-9
+          reserves space so the brand text sits with breathing
+          room below the 28px chrome row. */}
+      <div className="px-5 pt-9 pb-4 select-none">
         <div className="flex items-baseline gap-2">
           <span className="iz-display text-[17px] text-[var(--text)] tracking-tight">
             Life-Dashboard
