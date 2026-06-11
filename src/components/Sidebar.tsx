@@ -125,8 +125,9 @@ export function Sidebar() {
           (traffic lights + sidebar toggle) is a window-level
           layer above this, not a child of the panel. pt-9
           reserves space so the brand text sits with breathing
-          room below the 28px chrome row. */}
-      <div className="px-5 pt-9 pb-4 select-none">
+          room below the 28px chrome row. data-app-chrome opts
+          the brand out of text selection (see index.css). */}
+      <div data-app-chrome className="px-5 pt-9 pb-4 select-none">
         <div className="flex items-baseline gap-2">
           <span className="iz-display text-[17px] text-[var(--text)] tracking-tight">
             Life-Dashboard

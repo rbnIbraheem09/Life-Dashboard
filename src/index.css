@@ -50,10 +50,28 @@
     outline-offset: 2px;
   }
 
-  /* ── Text selection: app chrome is non-selectable; only actual content text is ── */
+  /* ── Text selection: app chrome is non-selectable; only actual content text is ──
+
+     IMPORTANT: we do NOT set `user-select: none` on the body. The
+     Tauri 2 WebView on macOS is forced into classic scrollbar
+     mode (which ignores `::-webkit-scrollbar` styling) whenever
+     the body has `user-select: none`. Removing the property from
+     the body lets the WebView return to its native macOS overlay
+     scrollbar mode, which then honors our `::-webkit-scrollbar`
+     styling — so the custom thin dark-mode thumb renders
+     instead of the chunky light-grey native classic bar.
+
+     The trade-off: without body-wide `user-select: none`, the
+     browser will allow text selection anywhere by default. We
+     explicitly opt the chrome surfaces back into
+     `user-select: none` below, so the app chrome (sidebar
+     brand, page nav, window chrome, traffic lights, toggle) is
+     never accidentally selected, but the body itself is
+     selectable — which is what the WebView needs to stay in
+     overlay scrollbar mode. */
   body {
-    user-select: none;
-    -webkit-user-select: none;
+    /* Intentionally NOT setting user-select here. See the comment
+       above for the Tauri-on-macOS WebView reason. */
   }
 
   p, h1, h2, h3, h4, h5, h6,
@@ -61,6 +79,18 @@
   input, textarea, [contenteditable="true"] {
     user-select: text;
     -webkit-user-select: text;
+  }
+
+  /* App chrome: opt out of text selection so the user can still
+     drag the window from the chrome row (and the brand / nav
+     items) without accidentally selecting text. Scoped only to
+     the chrome surfaces, never to the body. */
+  [data-app-chrome],
+  nav a,
+  button,
+  [role="button"] {
+    user-select: none;
+    -webkit-user-select: none;
   }
 }
 
@@ -109,52 +139,69 @@
   animation: iz-pulse var(--motion-mid) ease-out;
 }
 
-/* ── Scrollbars: aggressive Webkit classic-mode styling. ──
+/* ── Scrollbars: hybrid overlay — invisible at rest, custom thin on hover. ──
 
-   Tauri 2 on macOS uses a Webkit WebView. On macOS, the WebView
-   can run in either overlay scrollbar mode (auto-hide, like
-   native macOS apps) or classic scrollbar mode (always-visible
-   light-grey strip, like iOS or Windows). The Tauri WebView
-   often falls into classic mode when `user-select: none` is
-   applied to the body, which we do (to prevent the app chrome
-   from being text-selectable).
+   CRITICAL: this rule relies on the WebView being in macOS
+   native overlay scrollbar mode. Tauri 2 on macOS forces the
+   WebView into classic scrollbar mode (which ignores
+   `::-webkit-scrollbar` styling) whenever the body has
+   `user-select: none`. We deliberately do NOT set
+   `user-select: none` on the body for exactly this reason
+   (see the selection rules in @layer base above). The
+   result: the WebView runs in overlay mode by default,
+   `::-webkit-scrollbar` styling is honored, and we can
+   implement the Linear / Raycast / Arc pattern of
+   "invisible at rest, custom thin on hover."
 
-   In classic mode, `::-webkit-scrollbar { width: 0 }` does NOT
-   hide the scrollbar — Webkit still draws the native classic
-   bar. The only reliable way to fully hide a Webkit classic
-   scrollbar is `display: none`, but that also removes the
-   grabbable thumb on hover, which is a worse UX.
+   At rest (the default state):
+     *::-webkit-scrollbar: zero-width. The scrollbar takes
+     no horizontal/vertical space. The WebView treats the
+     surface as overlay-mode: no visual chrome, no reserved
+     layout space, but trackpad/wheel/keyboard scrolling
+     all still work.
+     *: scrollbar-width: none (Firefox/Linux fallback).
+     *: scrollbar-color: transparent (Firefox).
 
-   So the pragmatic answer is: stop trying to hide the
-   scrollbar, and style the visible classic bar so it looks
-   intentional. Set the scrollbar width explicitly, make the
-   track transparent, and give the thumb a thin on-brand
-   pill treatment. The scrollbar is always visible (10px
-   reserved layout space), but it's a clean dark-mode
-   treatment instead of the chunky light-grey macOS
-   default that was breaking the design.
+   On hover (the user is interacting with this region):
+     *::-webkit-scrollbar expands to 10px wide. The track
+     is transparent (just gives the thumb breathing room),
+     and the thumb is a thin grey pill
+     (var(--text-muted) at 45% opacity, rounded ends, 3px
+     transparent border so the visible thumb is 4px wide).
+     Hovering the thumb itself brightens it to
+     var(--text-dim) at 70% — the same "I'm about to grab
+     this" affordance as native macOS. Subtle motion-fast
+     transition so the thumb doesn't pop in jarringly.
 
-   The rule is global (applies to every scrollable surface
-   in the app) so DayDrawer, ActivityGrid's horizontal year
-   scroll, future modals, future pages all get the same
-   treatment without anyone having to remember to add a
-   class. This is the "design system" version of the
-   scrollbar: one rule, applies everywhere, impossible to
-   forget.
+   The rule is global so every scrollable surface in the
+   app (<main>, .sidebar-scroll, DayDrawer, ActivityGrid's
+   horizontal year scroll, future modals, future pages)
+   gets the same treatment without anyone having to
+   remember to add a class. This is the "design system"
+   version of the scrollbar: one rule, applies everywhere,
+   impossible to forget.
 
    The .sidebar-scroll surface gets a narrower 6px variant
-   so a 3-item sidebar never has a chunky thumb. The smaller
-   size reads as "secondary surface, not the main content." */
+   so a 3-item sidebar never has a chunky thumb, and the
+   smaller size reads as "secondary surface, not the main
+   content." */
 
 * {
-  /* Firefox / Linux: thin, on-brand thumb via standard
-     scrollbar-color. The track is transparent so the
-     surface background shows through the gutter. */
+  scrollbar-width: none;
+  scrollbar-color: transparent transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+*:hover {
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--text-muted) 45%, transparent) transparent;
 }
 
-*::-webkit-scrollbar {
+*:hover::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
@@ -168,11 +215,6 @@
   border-radius: 999px;
   border: 3px solid transparent;
   background-clip: content-box;
-  /* Subtle transition on the background-color so the
-     thumb brightens smoothly when the user starts
-     scrolling, instead of jumping in jarringly. The
-     same motion-fast we use everywhere else keeps the
-     timing consistent with the rest of the UI. */
   transition: background-color var(--motion-fast) ease-out;
 }
 
@@ -185,16 +227,11 @@
   background: transparent;
 }
 
-/* Sidebar inner list: narrower scrollbar so a 3-item
-   sidebar never has a chunky thumb, and the smaller size
-   reads as "secondary surface, not the main content." The
-   specificity here is higher than the global * rule, so
-   it overrides the 10px width inside the sidebar. */
-.sidebar-scroll {
-  scrollbar-width: thin;
-}
-
-.sidebar-scroll::-webkit-scrollbar {
+/* Sidebar inner list: narrower 6px thumb so a 3-item
+   sidebar never has a chunky thumb. The :hover specificity
+   here is higher than the global * rule, so it overrides
+   the 10px width inside the sidebar. */
+.sidebar-scroll:hover::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }

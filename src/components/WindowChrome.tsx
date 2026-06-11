@@ -62,6 +62,7 @@ export function WindowChrome() {
   return (
     <div
       data-window-drag-zone
+      data-app-chrome
       // Window-level absolute layer. h-7 = 28px (tall enough to
       // vertically center the 12px traffic lights). z-30 puts
       // it above the sidebar and the main content. `select-none`
