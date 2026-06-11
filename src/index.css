@@ -109,66 +109,52 @@
   animation: iz-pulse var(--motion-mid) ease-out;
 }
 
-/* ── Scrollbars: hybrid overlay — invisible at rest, custom thin on hover. ──
+/* ── Scrollbars: aggressive Webkit classic-mode styling. ──
 
-   The old design styled <main> and .sidebar-scroll with always-visible
-   thin scrollbars, but used `scrollbar-gutter: stable` which reserved
-   10px of layout space at all times, and never touched the other
-   scrollable surfaces in the app (DayDrawer, ActivityGrid's horizontal
-   scroll for the year view, etc.). The two surfaces that didn't have
-   a class fell back to the native macOS classic scrollbar — the chunky
-   light-grey one that appears on hover. That's the bug.
+   Tauri 2 on macOS uses a Webkit WebView. On macOS, the WebView
+   can run in either overlay scrollbar mode (auto-hide, like
+   native macOS apps) or classic scrollbar mode (always-visible
+   light-grey strip, like iOS or Windows). The Tauri WebView
+   often falls into classic mode when `user-select: none` is
+   applied to the body, which we do (to prevent the app chrome
+   from being text-selectable).
 
-   The right pattern for a modern Tauri/Webkit app on macOS is the
-   Linear/Raycast/Arc approach: a global rule that makes every Webkit
-   scrollbar invisible at rest, then expands to a custom thin thumb
-   on hover. The user gets the clean default of an overlay scrollbar
-   (no visual chrome, trackpad/wheel/keyboard all still work), and a
-   grabbable thumb the moment they hover. No per-class styles needed,
-   no native fallback, no layout space reserved.
+   In classic mode, `::-webkit-scrollbar { width: 0 }` does NOT
+   hide the scrollbar — Webkit still draws the native classic
+   bar. The only reliable way to fully hide a Webkit classic
+   scrollbar is `display: none`, but that also removes the
+   grabbable thumb on hover, which is a worse UX.
 
-   At rest (default):
-     *::-webkit-scrollbar: zero-width. The scrollbar takes no
-     horizontal/vertical space. The WebView treats the surface as
-     overlay-mode.
-     *: scrollbar-width: none (Firefox/Linux fallback).
-     *: scrollbar-color: transparent (Firefox).
+   So the pragmatic answer is: stop trying to hide the
+   scrollbar, and style the visible classic bar so it looks
+   intentional. Set the scrollbar width explicitly, make the
+   track transparent, and give the thumb a thin on-brand
+   pill treatment. The scrollbar is always visible (10px
+   reserved layout space), but it's a clean dark-mode
+   treatment instead of the chunky light-grey macOS
+   default that was breaking the design.
 
-   On hover (the user is interacting with this region):
-     *::-webkit-scrollbar expands to 10px wide. The track is
-     transparent (just gives the thumb breathing room), and the
-     thumb is a thin grey pill (var(--text-muted) at 35% opacity,
-     rounded ends, 3px transparent border so the visible thumb is
-     4px wide). Hovering the thumb itself brightens it to
-     var(--text-dim) at 60% — the same affordance as native macOS
-     "I'm about to grab this" feedback.
-     *: scrollbar-width: thin + scrollbar-color: subtle grey
-     (Firefox/Linux).
-
-   We do NOT scope this to <main> or .sidebar-scroll — it's a
-   global rule so every scrollable surface in the app
-   (DayDrawer, ActivityGrid, future pages, future modals) gets
-   the same treatment without anyone having to remember to
-   add a class. This is the "design system" version of the
+   The rule is global (applies to every scrollable surface
+   in the app) so DayDrawer, ActivityGrid's horizontal year
+   scroll, future modals, future pages all get the same
+   treatment without anyone having to remember to add a
+   class. This is the "design system" version of the
    scrollbar: one rule, applies everywhere, impossible to
-   forget. */
+   forget.
+
+   The .sidebar-scroll surface gets a narrower 6px variant
+   so a 3-item sidebar never has a chunky thumb. The smaller
+   size reads as "secondary surface, not the main content." */
 
 * {
-  scrollbar-width: none;
-  scrollbar-color: transparent transparent;
+  /* Firefox / Linux: thin, on-brand thumb via standard
+     scrollbar-color. The track is transparent so the
+     surface background shows through the gutter. */
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--text-muted) 45%, transparent) transparent;
 }
 
 *::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-}
-
-*:hover {
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--text-muted) 35%, transparent) transparent;
-}
-
-*:hover::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
@@ -178,28 +164,37 @@
 }
 
 *::-webkit-scrollbar-thumb {
-  background-color: color-mix(in srgb, var(--text-muted) 35%, transparent);
+  background-color: color-mix(in srgb, var(--text-muted) 45%, transparent);
   border-radius: 999px;
   border: 3px solid transparent;
   background-clip: content-box;
-  /* Subtle fade in so the scrollbar doesn't pop in jarringly
-     the moment the cursor enters the region. The same
-     motion-fast we use everywhere else keeps the timing
-     consistent with the rest of the UI. */
+  /* Subtle transition on the background-color so the
+     thumb brightens smoothly when the user starts
+     scrolling, instead of jumping in jarringly. The
+     same motion-fast we use everywhere else keeps the
+     timing consistent with the rest of the UI. */
   transition: background-color var(--motion-fast) ease-out;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background-color: color-mix(in srgb, var(--text-dim) 60%, transparent);
+  background-color: color-mix(in srgb, var(--text-dim) 70%, transparent);
   background-clip: content-box;
 }
 
-/* Sidebar inner list: at 6px (not 10px) so a 3-item sidebar
-   never has a chunky thumb, and the smaller size reads as
-   "this is a secondary surface, not the main content."
-   The :hover specificity here is higher than the global *
-   rule, so it overrides the 10px width inside the sidebar. */
-.sidebar-scroll:hover::-webkit-scrollbar {
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Sidebar inner list: narrower scrollbar so a 3-item
+   sidebar never has a chunky thumb, and the smaller size
+   reads as "secondary surface, not the main content." The
+   specificity here is higher than the global * rule, so
+   it overrides the 10px width inside the sidebar. */
+.sidebar-scroll {
+  scrollbar-width: thin;
+}
+
+.sidebar-scroll::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
