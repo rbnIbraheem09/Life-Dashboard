@@ -2,6 +2,8 @@ import { useRef } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useDashboard } from '../store/dashboard'
 import { cn } from '../lib/cn'
+import { TrafficLights } from './TrafficLights'
+import { PanelToggle } from './PanelToggle'
 
 /* ── Page icons (16×16, 1.5px stroke, currentColor — no icon library) ── */
 
@@ -46,15 +48,6 @@ function ReadingIcon() {
   )
 }
 
-function PlusIcon() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"
-      strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-      <path d="M8 3.5v9M3.5 8h9" />
-    </svg>
-  )
-}
-
 const BUILT_IN_PAGES = [
   { id: 'pullups', path: '/pullups', label: 'Pullups', icon: <PullupsIcon /> },
   { id: 'water', path: '/water', label: 'Water', icon: <WaterIcon /> },
@@ -65,7 +58,6 @@ const BUILT_IN_PAGES = [
 export function Sidebar() {
   const fileRef = useRef<HTMLInputElement>(null)
 
-  // Moved verbatim from TopNav — same store calls, same behavior.
   function handleExport() {
     const json = useDashboard.getState().exportJSON()
     const blob = new Blob([json], { type: 'application/json' })
@@ -95,32 +87,55 @@ export function Sidebar() {
       }
     }
     reader.readAsText(file)
-    // Reset so selecting the same file again still fires onChange.
     e.target.value = ''
   }
 
+  // The Sidebar renders as a FLOATING PANEL — a card with rounded
+  // corners and a drop shadow, with margin all around (10px) so the
+  // window background shows through on every side. The traffic
+  // lights and the panel-toggle button sit inside the panel's top
+  // zone.
+  //
+  // Because tauri.conf.json uses `titleBarStyle: "Transparent"`,
+  // the OS doesn't draw traffic lights — we render them as React
+  // buttons (see TrafficLights.tsx) and call `appWindow.minimize()`,
+  // `toggleMaximize()`, `close()` from them. That's the only way
+  // to get the traffic lights visually inside a panel that has
+  // margin from the window's top-left.
   return (
-    <aside className="w-[240px] shrink-0 h-full flex flex-col bg-[var(--surface)] border-r border-[var(--border)]">
-      {/* Brand block */}
-      <div className="px-5 pt-5 pb-3 flex items-center gap-2">
-        <span
-          className="inline-block w-2 h-2 rounded-full bg-[var(--accent-1)]"
-          style={{
-            boxShadow: '0 0 6px 1px color-mix(in srgb, var(--accent-1) 50%, transparent)',
-          }}
-        />
-        <span className="iz-label" style={{ color: 'var(--accent-1)' }}>
-          Active
-        </span>
-      </div>
-      <div className="px-5 pb-5">
-        <span className="iz-display text-lg text-[var(--text)] tracking-tight">
-          Life-Dashboard
-        </span>
+    <div
+      className={cn(
+        'h-full w-[240px] flex flex-col overflow-hidden',
+        'rounded-[var(--radius)]',
+        'border border-[var(--border)]',
+        'shadow-[0_8px_24px_-8px_rgba(0,0,0,0.5),0_2px_8px_-2px_rgba(0,0,0,0.3)]',
+        'bg-[var(--surface)]',
+      )}
+    >
+      {/* Top chrome row — traffic lights on the left, panel toggle on
+          the right. Both sit inside the panel's top zone with proper
+          margin from the panel's rounded corner. data-window-drag-zone
+          makes the empty space between them draggable. */}
+      <div
+        data-window-drag-zone
+        className="h-[34px] flex items-center justify-between px-3 pt-2 shrink-0"
+      >
+        <TrafficLights />
+        <PanelToggle />
       </div>
 
-      {/* Pages section */}
-      <div className="px-3 flex-1 overflow-y-auto no-scrollbar">
+      {/* Brand block — sits below the chrome row. */}
+      <div className="px-5 pt-3 pb-4 select-none">
+        <div className="flex items-baseline gap-2">
+          <span className="iz-display text-[17px] text-[var(--text)] tracking-tight">
+            Life-Dashboard
+          </span>
+        </div>
+        <span className="iz-label mt-1 block">v0.2 · desktop</span>
+      </div>
+
+      {/* Pages section — flex-1 so it claims all the space between brand and footer. */}
+      <div className="px-3 pt-2 pb-3 flex-1 min-h-0 overflow-y-auto sidebar-scroll">
         <div className="flex items-center gap-2 px-2 mb-2">
           <span className="iz-label">Pages</span>
           <div className="flex-1 h-px bg-[var(--border)]" />
@@ -136,7 +151,7 @@ export function Sidebar() {
                   'border-l-2 transition-colors duration-[var(--motion-fast)]',
                   isActive
                     ? 'bg-white/[0.04] border-l-[var(--accent-1)] text-[var(--text)]'
-                    : 'border-l-transparent text-[var(--text-muted)] hover:text-[var(--text-dim)] hover:bg-white/[0.02]'
+                    : 'border-l-transparent text-[var(--text-muted)] hover:text-[var(--text-dim)] hover:bg-white/[0.02]',
                 )
               }
             >
@@ -144,35 +159,33 @@ export function Sidebar() {
               <span>{page.label}</span>
             </NavLink>
           ))}
-          <button
-            type="button"
-            disabled
-            title="Coming in Phase 3"
-            className="flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] text-[var(--text-muted)] opacity-50 cursor-default border-l-2 border-l-transparent"
-          >
-            <span className="w-4 h-4 shrink-0">
-              <PlusIcon />
-            </span>
-            <span>Add page</span>
-          </button>
         </nav>
       </div>
 
-      {/* Export / Import at bottom */}
-      <div className="px-3 py-3 border-t border-[var(--border)] flex flex-col gap-1">
+      {/* Footer — export / import. */}
+      <div className="px-3 py-3 border-t border-[var(--border)] flex flex-col gap-0.5">
+        <span className="iz-label px-3 mb-1">Data</span>
         <button
           type="button"
           onClick={handleExport}
-          className="flex items-center gap-2.5 px-3 py-1.5 rounded-md text-[12px] text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-white/[0.03] transition-colors duration-[var(--motion-fast)]"
+          className={cn(
+            'flex items-center gap-2.5 px-3 py-1.5 rounded-md text-[12px] text-[var(--text-muted)]',
+            'hover:text-[var(--text)] hover:bg-white/[0.03] transition-colors duration-[var(--motion-fast)]',
+          )}
         >
-          <span className="iz-mono">↓</span> Export data
+          <span className="iz-mono w-4 inline-flex justify-center">↓</span>
+          Export data
         </button>
         <button
           type="button"
           onClick={() => fileRef.current?.click()}
-          className="flex items-center gap-2.5 px-3 py-1.5 rounded-md text-[12px] text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-white/[0.03] transition-colors duration-[var(--motion-fast)]"
+          className={cn(
+            'flex items-center gap-2.5 px-3 py-1.5 rounded-md text-[12px] text-[var(--text-muted)]',
+            'hover:text-[var(--text)] hover:bg-white/[0.03] transition-colors duration-[var(--motion-fast)]',
+          )}
         >
-          <span className="iz-mono">↑</span> Import data
+          <span className="iz-mono w-4 inline-flex justify-center">↑</span>
+          Import data
         </button>
         <input
           ref={fileRef}
@@ -182,6 +195,6 @@ export function Sidebar() {
           className="hidden"
         />
       </div>
-    </aside>
+    </div>
   )
 }
