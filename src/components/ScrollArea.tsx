@@ -76,7 +76,6 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
   type TouchEvent as ReactTouchEvent,
-  type WheelEvent as ReactWheelEvent,
 } from 'react'
 import { cn } from '../lib/cn'
 
@@ -163,6 +162,37 @@ export function ScrollArea({
     return () => ro.disconnect()
   }, [direction])
 
+  // ── Scrolling-active timer ────────────────────────────────
+  // We reveal the thumb while the user is actively scrolling
+  // (wheel, touch, drag, keyboard). After 600ms of no
+  // scroll input, the thumb dims back to the at-rest state
+  // (still visible, just less prominent). This matches the
+  // behavior of native macOS overlay scrollbars.
+  //
+  // Defined here (before the wheel/keyboard/touch handlers)
+  // so they can reference it without a TypeScript
+  // "used before declaration" error. The cleanup effect
+  // also lives here, immediately after the callback, so
+  // the timer's lifetime is visually obvious.
+  const bumpScrolling = useCallback(() => {
+    setScrolling(true)
+    if (scrollTimerRef.current !== null) {
+      window.clearTimeout(scrollTimerRef.current)
+    }
+    scrollTimerRef.current = window.setTimeout(() => {
+      setScrolling(false)
+    }, 600)
+  }, [])
+
+  // Cleanup the timer on unmount.
+  useEffect(() => {
+    return () => {
+      if (scrollTimerRef.current !== null) {
+        window.clearTimeout(scrollTimerRef.current)
+      }
+    }
+  }, [])
+
   // ── Scroll math ───────────────────────────────────────────
   // The maximum scroll offset is `max(0, contentSize - viewportSize)`.
   // When the content is smaller than the viewport, maxScroll=0
@@ -204,27 +234,119 @@ export function ScrollArea({
   // browser has nothing to scroll — so we capture the wheel
   // ourselves, prevent the default behavior (which on some
   // platforms triggers page scroll), and update our scroll
-  // state. deltaMode 0 (pixels) is what trackpads send; we
-  // don't currently handle deltaMode 1 (lines) or 2 (pages)
+  // state.
+  //
+  // IMPORTANT: React 17+ attaches `onWheel` as a *passive*
+  // listener, which means `e.preventDefault()` is a no-op.
+  // Without a non-passive listener, the browser still
+  // performs its default scroll behavior on every wheel
+  // event, which (a) causes the page to move out from under
+  // the user's trackpad gestures and (b) makes the
+  // "the entire page is moving when I scroll the activity
+  // grid" bug we just fixed — the browser's default scroll
+  // runs on the body or a parent, while our React handler
+  // also updates our state, producing two competing
+  // scrolls.
+  //
+  // We attach the wheel listener via a useEffect with
+  // { passive: false } so preventDefault actually works.
+  // The handler reads the latest canScroll, maxScroll, and
+  // direction from refs to avoid re-binding on every render.
+  //
+  // Axis handling (the bug fix):
+  //   We previously only read e.deltaY, which broke
+  //   horizontal scroll: a trackpad pan over the activity
+  //   grid year view (direction='horizontal') sends deltaX
+  //   for the dominant motion, but we ignored it and the
+  //   user saw no horizontal scroll. The parent <main>
+  //   ScrollArea would then pick up the wheel event via
+  //   bubbling and scroll the whole page vertically while
+  //   the user was trying to scroll the grid horizontally —
+  //   which reads as "the entire page is moving when I try
+  //   to scroll the activity grid."
+  //
+  //   The fix: pick the dominant axis based on the
+  //   component's direction, read the matching delta, and
+  //   stopPropagation so the event doesn't bubble to the
+  //   parent and cause a competing scroll on the wrong
+  //   axis. For direction='vertical', use deltaY; for
+  //   direction='horizontal', use deltaX. The non-dominant
+  //   axis delta is ignored (this is what native scroll
+  //   regions do too).
+  //
+  //   If the component can't scroll on its own axis (e.g.
+  //   a vertical ScrollArea whose content is shorter than
+  //   the viewport), we let the event bubble to the parent
+  //   by NOT calling stopPropagation, so the user can still
+  //   scroll the parent's axis. This is the natural
+  //   chained-scroll behavior of native regions.
+  //
+  // deltaMode 0 (pixels) is what trackpads send; we don't
+  // currently handle deltaMode 1 (lines) or 2 (pages)
   // explicitly but the values are usually reasonable.
-  const onWheel = useCallback(
-    (e: ReactWheelEvent<HTMLDivElement>) => {
-      if (!canScroll || draggingRef.current) return
+  //
+  // We keep an `onWheel` prop on the viewport for React's
+  // synthetic event system (so React DevTools sees it), but
+  // the actual logic lives in the useEffect below. The prop
+  // is a no-op.
+  useEffect(() => {
+    const viewport = viewportRef.current
+    if (!viewport) return
+
+    function handler(e: WheelEvent) {
+      if (draggingRef.current) return
+
+      const delta = direction === 'vertical' ? e.deltaY : e.deltaX
+
+      // No scroll input on our axis — let the event bubble
+      // so the parent (or the browser) can handle it.
+      if (delta === 0) return
+
+      if (!canScrollRef.current) return
+
+      // We have room to scroll on our axis. Consume the
+      // event: preventDefault to stop the browser's native
+      // scroll behavior (page bounce, etc.), and
+      // stopPropagation so the parent ScrollArea (or any
+      // other ancestor) doesn't also scroll on this event.
       e.preventDefault()
-      // Use the native event directly (not the React synthetic)
-      // so preventDefault works on a passive listener — we
-      // attach via onWheel which is non-passive.
-      const delta = e.deltaY
-      setScroll((prev) => Math.min(Math.max(0, prev + delta), maxScroll))
+      e.stopPropagation()
+
+      setScroll((prev) => {
+        const max = maxScrollRef.current
+        return Math.min(Math.max(0, prev + delta), max)
+      })
       bumpScrolling()
-    },
-    // We deliberately don't depend on `maxScroll` here — we
-    // want the latest maxScroll at the time of the wheel
-    // event, but a fresh closure per render is fine because
-    // React re-renders the handler when deps change anyway.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [canScroll],
-  )
+    }
+
+    // Non-passive so preventDefault() actually works.
+    // Without this, React 17+'s default passive onWheel
+    // listener makes preventDefault a no-op, and the
+    // browser's native scroll runs alongside our React
+    // state update — producing two competing scrolls and
+    // the "page is moving" feeling the user reported.
+    viewport.addEventListener('wheel', handler, { passive: false })
+    return () => {
+      viewport.removeEventListener('wheel', handler)
+    }
+  }, [direction, bumpScrolling])
+
+  // Refs the wheel handler reads so the effect doesn't
+  // re-bind on every state change. canScroll and maxScroll
+  // are derived from viewportSize and contentSize, which
+  // change on every ResizeObserver fire — if the wheel
+  // handler captured them in its closure, the effect would
+  // re-attach the listener on every resize. Reading them
+  // via ref instead keeps the listener bound for the
+  // lifetime of the component.
+  const canScrollRef = useRef(false)
+  const maxScrollRef = useRef(0)
+  useEffect(() => {
+    canScrollRef.current = canScroll
+  }, [canScroll])
+  useEffect(() => {
+    maxScrollRef.current = maxScroll
+  }, [maxScroll])
 
   // ── Keyboard handler ──────────────────────────────────────
   // Arrow keys scroll by 40px (one row of text-ish content),
@@ -399,30 +521,10 @@ export function ScrollArea({
     [canScroll, direction, viewportSize, thumbSize],
   )
 
-  // ── Scrolling-active timer ────────────────────────────────
-  // We reveal the thumb while the user is actively scrolling
-  // (wheel, touch, drag, keyboard). After 600ms of no
-  // scroll input, the thumb dims back to the at-rest state
-  // (still visible, just less prominent). This matches the
-  // behavior of native macOS overlay scrollbars.
-  const bumpScrolling = useCallback(() => {
-    setScrolling(true)
-    if (scrollTimerRef.current !== null) {
-      window.clearTimeout(scrollTimerRef.current)
-    }
-    scrollTimerRef.current = window.setTimeout(() => {
-      setScrolling(false)
-    }, 600)
-  }, [])
-
-  // Cleanup the timer on unmount.
-  useEffect(() => {
-    return () => {
-      if (scrollTimerRef.current !== null) {
-        window.clearTimeout(scrollTimerRef.current)
-      }
-    }
-  }, [])
+  // (The Scrolling-active timer and its cleanup effect live
+  // higher up in this file, defined before the wheel/keyboard/
+  // touch handlers that reference them. Moving them up
+  // avoids TypeScript "used before declaration" errors.)
 
   // ── Render ────────────────────────────────────────────────
   // Outer: the viewport. overflow:hidden is the key — the
@@ -446,7 +548,6 @@ export function ScrollArea({
       ref={viewportRef}
       role="region"
       tabIndex={0}
-      onWheel={onWheel}
       onKeyDown={onKeyDown}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
