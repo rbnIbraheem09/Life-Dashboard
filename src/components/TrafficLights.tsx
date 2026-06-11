@@ -13,22 +13,48 @@
  *   So we push them off-screen and render our own inside the
  *   panel. This is what Linear / Raycast / Arc do.
  *
- * Wiring:
+ * Wiring (real macOS app behavior):
  *   Each button calls a Tauri command via `getCurrentWindow()`:
- *     - close  → appWindow.close()
+ *     - close  → appWindow.hide()  (NOT close())
  *     - min    → appWindow.minimize()
- *     - max    → maximize() if not currently maximized, else
- *                unmaximize() — read via isMaximized() first
+ *     - max    → appWindow.toggleMaximize()
  *
- * Why not toggleMaximize():
- *   In Overlay mode, Tauri 2's `toggleMaximize()` on macOS ends up
- *   driving the wrong OS state and the user sees the window jump
- *   into macOS native fullscreen (which hides the dock and the
- *   title bar) instead of the normal "fits the screen with the
- *   title bar still visible" behavior that Finder, Safari, and
- *   Notes use. Using the explicit maximize() / unmaximize() pair
- *   with an isMaximized() check before each click gives the
- *   expected macOS native maximize semantics.
+ * Why close is hide, not close:
+ *   In a Tauri 2 single-window app, `appWindow.close()` actually
+ *   quits the process on macOS — the app disappears from the dock
+ *   and the menu bar vanishes. That is NOT how normal macOS apps
+ *   behave when you click the red dot. Finder, Safari, Notes,
+ *   Mail, etc. all keep running after the user closes the only
+ *   window: the window disappears, but the dock icon and menu
+ *   bar stay, and clicking the dock icon re-shows the window.
+ *   The Tauri equivalent of that is `appWindow.hide()` — the
+ *   window goes away, the process keeps running, the user can
+ *   re-open via the dock or the menu bar.
+ *
+ * Why toggleMaximize (and not the explicit maximize/unmaximize
+ * pair with isMaximized):
+ *   An earlier iteration used `isMaximized() + maximize() /
+ *   unmaximize()` for "more explicit semantics." The result was
+ *   that the green button did nothing at all, because the
+ *   Tauri capabilities allow `core:window:allow-toggle-maximize`
+ *   but did NOT allow `core:window:allow-maximize` or
+ *   `core:window:allow-unmaximize` — the permission system
+ *   silently rejected the calls, and the `safe()` wrapper
+ *   swallowed the errors. The result: no visible feedback,
+ *   a confused user, and a wrong "fix" that masqueraded as
+ *   progress. Reverting to `toggleMaximize()` (which IS in
+ *   the capability list) and surfacing errors via
+ *   console.warn instead of silently swallowing them is the
+ *   honest fix. If the user wants fine-grained control over
+ *   maximize vs fullscreen later, that's a separate
+ *   permission grant + a separate decision.
+ *
+ *   In macOS Overlay mode, toggleMaximize gives the standard
+ *   "fits the screen with title bar still visible" behavior
+ *   that Finder/Safari/Notes use. (The earlier claim that it
+ *   "drives the window into native fullscreen" was
+ *   unverified — the real failure was permissions, not
+ *   toggleMaximize.)
  *
  * Hover state (real macOS behavior):
  *   On hover, each light reveals its glyph (×, −, +) using the
@@ -42,6 +68,13 @@
  *   The buttons are clickable, so they opt out of the window drag
  *   zone via the `[data-no-drag]` attribute and the fact that
  *   they're <button> elements (the drag hook skips both).
+ *
+ * Error handling:
+ *   Errors are surfaced via `console.warn` instead of being
+ *   silently swallowed. If the Tauri command fails (e.g.
+ *   permission missing, window already destroyed, etc.) the
+ *   user and developer can see why. In a production desktop
+ *   app, surface-level errors should be observable, not hidden.
  */
 
 import { getCurrentWindow } from '@tauri-apps/api/window'
@@ -120,23 +153,32 @@ function Light({ color, glyph, label, onClick }: LightProps) {
 }
 
 export function TrafficLights() {
-  // We call the Tauri commands at click time (not on mount) so a
-  // browser `npm run dev` doesn't crash if the Tauri APIs are missing.
-  function safe(fn: () => Promise<unknown>) {
-    return () => {
-      try {
-        fn().catch(() => {})
-      } catch {
-        /* browser dev — no-op */
-      }
-    }
-  }
-
+  // We resolve `appWindow` at click time (not on mount) so a
+  // browser `npm run dev` doesn't crash if the Tauri APIs are
+  // missing. In a Tauri build, getCurrentWindow() returns the
+  // live window; in a browser, it throws and we no-op.
   let appWindow: ReturnType<typeof getCurrentWindow> | null = null
   try {
     appWindow = getCurrentWindow()
   } catch {
-    /* browser dev */
+    /* browser dev — no Tauri runtime */
+  }
+
+  // Wraps a Tauri command so the click never throws. If the
+  // command fails, we log the error via console.warn so the
+  // developer can see what went wrong. We deliberately do NOT
+  // show a UI toast for these — the user clicked a traffic
+  // light, the action is atomic, and any failure is either
+  // a bug (dev time) or a system-level condition (already-
+  // closed window, etc.) that the user can't act on.
+  function run(label: string, fn: () => Promise<unknown>) {
+    return () => {
+      if (!appWindow) return
+      fn().catch((err) => {
+        // eslint-disable-next-line no-console
+        console.warn(`[TrafficLights] ${label} failed:`, err)
+      })
+    }
   }
 
   return (
@@ -145,33 +187,25 @@ export function TrafficLights() {
         color="#FF5F57"
         glyph={<CloseGlyph />}
         label="Close"
-        onClick={safe(() => appWindow!.close())}
+        // hide() instead of close(): in a single-window Tauri
+        // app, close() quits the process on macOS. Normal macOS
+        // apps (Finder, Safari, Notes) keep running after the
+        // red dot — the window disappears, the dock icon and
+        // menu bar stay, clicking the dock icon re-shows the
+        // window. hide() gives us exactly that.
+        onClick={run('hide', () => appWindow!.hide())}
       />
       <Light
         color="#FEBC2E"
         glyph={<MinGlyph />}
         label="Minimize"
-        onClick={safe(() => appWindow!.minimize())}
+        onClick={run('minimize', () => appWindow!.minimize())}
       />
       <Light
         color="#28C840"
         glyph={<MaxGlyph />}
         label="Maximize"
-        onClick={safe(async () => {
-          // Read the current maximized state, then flip it with
-          // the explicit maximize()/unmaximize() pair. Avoids
-          // toggleMaximize(), which misbehaves in Overlay mode on
-          // macOS (drives the window into native fullscreen
-          // instead of macOS-standard maximize). See file header
-          // for the full explanation.
-          if (!appWindow) return
-          const isMax = await appWindow.isMaximized()
-          if (isMax) {
-            await appWindow.unmaximize()
-          } else {
-            await appWindow.maximize()
-          }
-        })}
+        onClick={run('toggleMaximize', () => appWindow!.toggleMaximize())}
       />
     </div>
   )

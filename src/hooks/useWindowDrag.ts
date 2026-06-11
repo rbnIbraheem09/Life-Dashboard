@@ -27,12 +27,17 @@
  *   trigger drag uniformly.
  *
  * Double-click:
- *   A real macOS title bar maximizes the window on double-click. We
- *   honor that: a second `pointerdown` within 350ms of the first
- *   flips the maximized state instead of starting a drag. Uses
- *   the explicit maximize() / unmaximize() pair with an
- *   isMaximized() check, same as the green traffic light — see
- *   TrafficLights.tsx for the rationale.
+ *   A real macOS title bar maximizes the window on double-click.
+ *   We honor that: a second `pointerdown` within 350ms of the
+ *   first flips the maximized state via `toggleMaximize()`,
+ *   same as the green traffic light. The earlier iteration
+ *   used `isMaximized() + maximize() / unmaximize()` for
+ *   "more explicit semantics" — but those calls required
+ *   capabilities that weren't granted, so the permission
+ *   system silently rejected them. Reverted to
+ *   `toggleMaximize()` (which IS in the capability list) and
+ *   now surfaces errors via console.warn instead of silently
+ *   swallowing them. See TrafficLights.tsx for the full story.
  */
 
 import { useEffect, useRef } from 'react'
@@ -92,20 +97,18 @@ export function useWindowDrag() {
       e.preventDefault()
 
       if (isDouble) {
-        // Same maximize fix as TrafficLights.tsx: explicit
-        // maximize/unmaximize driven by isMaximized(), not
-        // toggleMaximize() (which drives the wrong OS state in
-        // Overlay mode on macOS).
-        appWindow
-          .isMaximized()
-          .then((isMax) =>
-            isMax
-              ? appWindow.unmaximize()
-              : appWindow.maximize(),
-          )
-          .catch(() => {})
+        // Same call as the green traffic light — see
+        // TrafficLights.tsx for why we use toggleMaximize
+        // here (capabilities, not API choice).
+        appWindow.toggleMaximize().catch((err) => {
+          // eslint-disable-next-line no-console
+          console.warn('[useWindowDrag] toggleMaximize failed:', err)
+        })
       } else {
-        appWindow.startDragging().catch(() => {})
+        appWindow.startDragging().catch((err) => {
+          // eslint-disable-next-line no-console
+          console.warn('[useWindowDrag] startDragging failed:', err)
+        })
       }
     }
 
