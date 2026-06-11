@@ -109,69 +109,97 @@
   animation: iz-pulse var(--motion-mid) ease-out;
 }
 
-/* ── Scrollbars: thin, on-brand, only appear where they help. ──
+/* ── Scrollbars: hybrid overlay — invisible at rest, custom thin on hover. ──
 
-   Three layers of behavior, in order of preference:
-     1. <main>: OS overlay scrollbar (macOS hides it entirely; on Windows/Linux
-        a thin native one shows). This is the primary content surface, and
-        nothing about it is broken — leave the OS to handle it.
-     2. .sidebar-scroll: also overlay, but as a fallback we provide a thin
-        custom thumb on Webkit (the Tauri WebView on macOS is Webkit).
-     3. Everywhere else: no styling, defaults. The previous global "kill all
-        scrollbars" hack was wrong — invisibility is worse than a thin thumb
-        because you can't tell what's scrollable or grab a thumb to drag.
+   The old design styled <main> and .sidebar-scroll with always-visible
+   thin scrollbars, but used `scrollbar-gutter: stable` which reserved
+   10px of layout space at all times, and never touched the other
+   scrollable surfaces in the app (DayDrawer, ActivityGrid's horizontal
+   scroll for the year view, etc.). The two surfaces that didn't have
+   a class fell back to the native macOS classic scrollbar — the chunky
+   light-grey one that appears on hover. That's the bug.
 
-   We deliberately do NOT use the global `*::-webkit-scrollbar { display: none }`
-   trick anymore. Scroll *behavior* (trackpad, keyboard, wheel) was always
-   fine; only the visual needed customising. */
+   The right pattern for a modern Tauri/Webkit app on macOS is the
+   Linear/Raycast/Arc approach: a global rule that makes every Webkit
+   scrollbar invisible at rest, then expands to a custom thin thumb
+   on hover. The user gets the clean default of an overlay scrollbar
+   (no visual chrome, trackpad/wheel/keyboard all still work), and a
+   grabbable thumb the moment they hover. No per-class styles needed,
+   no native fallback, no layout space reserved.
 
-main {
-  scrollbar-gutter: stable;
+   At rest (default):
+     *::-webkit-scrollbar: zero-width. The scrollbar takes no
+     horizontal/vertical space. The WebView treats the surface as
+     overlay-mode.
+     *: scrollbar-width: none (Firefox/Linux fallback).
+     *: scrollbar-color: transparent (Firefox).
+
+   On hover (the user is interacting with this region):
+     *::-webkit-scrollbar expands to 10px wide. The track is
+     transparent (just gives the thumb breathing room), and the
+     thumb is a thin grey pill (var(--text-muted) at 35% opacity,
+     rounded ends, 3px transparent border so the visible thumb is
+     4px wide). Hovering the thumb itself brightens it to
+     var(--text-dim) at 60% — the same affordance as native macOS
+     "I'm about to grab this" feedback.
+     *: scrollbar-width: thin + scrollbar-color: subtle grey
+     (Firefox/Linux).
+
+   We do NOT scope this to <main> or .sidebar-scroll — it's a
+   global rule so every scrollable surface in the app
+   (DayDrawer, ActivityGrid, future pages, future modals) gets
+   the same treatment without anyone having to remember to
+   add a class. This is the "design system" version of the
+   scrollbar: one rule, applies everywhere, impossible to
+   forget. */
+
+* {
+  scrollbar-width: none;
+  scrollbar-color: transparent transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+*:hover {
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--text-muted) 35%, transparent) transparent;
 }
-main::-webkit-scrollbar {
+
+*:hover::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
-main::-webkit-scrollbar-track {
+
+*::-webkit-scrollbar-track {
   background: transparent;
 }
-main::-webkit-scrollbar-thumb {
+
+*::-webkit-scrollbar-thumb {
   background-color: color-mix(in srgb, var(--text-muted) 35%, transparent);
   border-radius: 999px;
   border: 3px solid transparent;
   background-clip: content-box;
+  /* Subtle fade in so the scrollbar doesn't pop in jarringly
+     the moment the cursor enters the region. The same
+     motion-fast we use everywhere else keeps the timing
+     consistent with the rest of the UI. */
+  transition: background-color var(--motion-fast) ease-out;
 }
-main::-webkit-scrollbar-thumb:hover {
+
+*::-webkit-scrollbar-thumb:hover {
   background-color: color-mix(in srgb, var(--text-dim) 60%, transparent);
   background-clip: content-box;
 }
 
-/* Sidebar inner list: thumb only shows on hover/active, so a 3-item sidebar
-   never displays a useless 10px track. Trackpad / wheel still scroll. */
-.sidebar-scroll {
-  scrollbar-gutter: stable;
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
-}
-.sidebar-scroll:hover {
-  scrollbar-color: color-mix(in srgb, var(--text-muted) 30%, transparent) transparent;
-}
-.sidebar-scroll::-webkit-scrollbar {
+/* Sidebar inner list: at 6px (not 10px) so a 3-item sidebar
+   never has a chunky thumb, and the smaller size reads as
+   "this is a secondary surface, not the main content."
+   The :hover specificity here is higher than the global *
+   rule, so it overrides the 10px width inside the sidebar. */
+.sidebar-scroll:hover::-webkit-scrollbar {
   width: 6px;
   height: 6px;
-}
-.sidebar-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-.sidebar-scroll::-webkit-scrollbar-thumb {
-  background-color: transparent;
-  border-radius: 999px;
-}
-.sidebar-scroll:hover::-webkit-scrollbar-thumb {
-  background-color: color-mix(in srgb, var(--text-muted) 35%, transparent);
-}
-.sidebar-scroll::-webkit-scrollbar-thumb:hover {
-  background-color: color-mix(in srgb, var(--text-dim) 55%, transparent);
 }

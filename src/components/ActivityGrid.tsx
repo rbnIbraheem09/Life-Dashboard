@@ -191,7 +191,7 @@ export function ActivityGrid() {
       <h3 className="iz-display text-xl text-[var(--text)] mb-4">{periodLabel}</h3>
 
       {/* Day labels + grid */}
-      <div className="no-scrollbar flex gap-2 overflow-x-auto">
+      <div className="flex gap-2 overflow-x-auto">
         <div
           className="grid gap-[3px] shrink-0"
           style={{ gridTemplateRows: `repeat(${ROWS}, 14px)` }}

@@ -99,7 +99,7 @@ export function DayDrawer({
         aria-modal="true"
         aria-hidden={!open}
         className={cn(
-          'fixed right-0 top-0 h-full w-full sm:w-[420px] bg-[var(--surface)] border-l border-[var(--border)] z-50 p-7 overflow-y-auto no-scrollbar',
+          'fixed right-0 top-0 h-full w-full sm:w-[420px] bg-[var(--surface)] border-l border-[var(--border)] z-50 p-7 overflow-y-auto',
           'transition-transform duration-[var(--motion-mid)] ease-out',
           open ? 'translate-x-0' : 'translate-x-full'
         )}
