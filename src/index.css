@@ -105,21 +105,15 @@
   animation: iz-pulse var(--motion-mid) ease-out;
 }
 
-/* ── Suppress scrollbar styling on horizontal-scroll regions (e.g. activity grid) ── */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-/* ── Scrollbars: invisible everywhere by default; one slim, dark scrollbar on
-   the single page-scroll container (<main>) only. ──
+/* ── Scrollbars: invisible everywhere, no exceptions. ──
 
    The old `*:hover::-webkit-scrollbar-thumb` pattern was a descendant selector,
-   not a state selector — it never reliably hid the thumb in the Tauri WebView,
-   so the default light-gray macOS scrollbar leaked through on the right edge and
-   inside the activity card's horizontal-scroll region. The fix: zero out every
-   scrollbar globally, then re-enable a styled one on <main> alone. */
+   not a state selector — it never reliably hid the thumb in the Tauri WebView.
+   The previous fix added a styled thumb on <main> only, but the user reported
+   it still leaked when an external mouse was connected. The honest fix: kill
+   all scrollbar visuals everywhere, period. Scroll *behavior* still works
+   (trackpad, keyboard, mouse wheel) — only the visual is gone. */
 
-/* Hide by default — WebKit (Tauri WebView, Safari, Chrome) + Firefox + legacy. */
 * {
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -127,27 +121,5 @@
 *::-webkit-scrollbar {
   width: 0;
   height: 0;
-}
-
-/* <main> is the one place we want a (barely-there, dark) scrollbar: discoverable
-   without the ugly light-gray default. var(--border) is rgba(255,255,255,0.06) —
-   a faint dark sliver against the page, never light gray. */
-main {
-  scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
-}
-main::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-main::-webkit-scrollbar-track {
-  background: transparent;
-}
-main::-webkit-scrollbar-thumb {
-  background-color: var(--border);
-  border-radius: 3px;
-  transition: background-color var(--motion-mid) ease;
-}
-main::-webkit-scrollbar-thumb:hover {
-  background-color: var(--border-active);
+  display: none;
 }

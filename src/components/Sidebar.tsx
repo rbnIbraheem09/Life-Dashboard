@@ -55,29 +55,6 @@ function PlusIcon() {
   )
 }
 
-function RefreshIcon() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"
-      strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
-      <path d="M13 8a5 5 0 0 1-9.6 1.9M3 8a5 5 0 0 1 9.6-1.9" />
-      <path d="M12 3.5v3h-3M4 12.5v-3h3" />
-    </svg>
-  )
-}
-
-function GearIcon() {
-  return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"
-      strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
-      <circle cx="8" cy="8" r="2" />
-      <path d="M8 1.5v2M8 12.5v2M14.5 8h-2M3.5 8h-2M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4M12.6 12.6l-1.4-1.4M4.8 4.8L3.4 3.4" />
-    </svg>
-  )
-}
-
-const iconBtnClass =
-  'w-6 h-6 rounded-md text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-white/[0.04] flex items-center justify-center transition-colors duration-[var(--motion-fast)] disabled:opacity-40 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-[var(--text-muted)]'
-
 const BUILT_IN_PAGES = [
   { id: 'pullups', path: '/pullups', label: 'Pullups', icon: <PullupsIcon /> },
   { id: 'water', path: '/water', label: 'Water', icon: <WaterIcon /> },
@@ -123,42 +100,36 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-[240px] shrink-0 h-full flex flex-col bg-[var(--surface)] border-r border-[var(--border)]">
-      {/* Brand block */}
-      <div className="px-5 pt-5 pb-3 flex items-center gap-2">
+    /* The <aside> opts out of drag so the nav links and buttons stay clickable.
+       The root container in App.tsx is the drag region; the empty top-right
+       of the main area is where the user grabs to move the window. */
+    <aside
+      className="w-[240px] shrink-0 h-full flex flex-col bg-[var(--surface)] border-r border-[var(--border)]"
+      data-tauri-drag-region={false}
+      style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+    >
+      {/* Brand block — padding-left of 80px leaves room for the 3 macOS traffic
+          light buttons that sit at top-left of the window (decorations: false
+          + titleBarStyle: "Overlay" positions them in OS coordinates). */}
+      <div
+        className="px-5 pt-3 pb-3 flex items-center gap-2"
+        style={{ paddingLeft: '80px' }}
+      >
         <span
           className="inline-block w-2 h-2 rounded-full bg-[var(--accent-1)]"
           style={{
-            boxShadow: '0 0 6px 1px color-mix(in srgb, var(--accent-1) 50%, transparent)',
+            boxShadow:
+              '0 0 6px 1px color-mix(in srgb, var(--accent-1) 50%, transparent)',
           }}
         />
         <span className="iz-label" style={{ color: 'var(--accent-1)' }}>
           Active
         </span>
       </div>
-      <div className="px-5 pb-5 flex items-start gap-2">
+      <div className="px-5 pb-5">
         <span className="iz-display text-lg text-[var(--text)] tracking-tight">
           Life-Dashboard
         </span>
-        {/* Top-right action icons (relocated from the now-deleted Ribbon) */}
-        <div className="ml-auto flex items-center gap-0.5">
-          <button
-            type="button"
-            disabled
-            title="Coming in Phase 3"
-            className={iconBtnClass}
-          >
-            <RefreshIcon />
-          </button>
-          <button
-            type="button"
-            disabled
-            title="Coming in Phase 3"
-            className={iconBtnClass}
-          >
-            <GearIcon />
-          </button>
-        </div>
       </div>
 
       {/* Pages section */}
