@@ -96,18 +96,33 @@ export default function App() {
         />
 
         <main className="flex-1 min-w-0">
-          <ScrollArea className="h-full w-full">
-            <Routes>
-              <Route path="/" element={<Navigate to="/pullups" replace />} />
-              <Route path="/pullups" element={<PullupPage />} />
-              <Route path="/water" element={<ComingSoon challenge="water" />} />
-              <Route path="/sleep" element={<ComingSoon challenge="sleep" />} />
-              <Route
-                path="/reading"
-                element={<ComingSoon challenge="reading" />}
-              />
-              <Route path="*" element={<Navigate to="/pullups" replace />} />
-            </Routes>
+          {/* contentClassName makes the scroll content at least as tall as
+              the viewport and a flex column; the `my-auto` wrapper then
+              centers the page vertically when it fits and collapses to the
+              top (fully scrollable) when it overflows. */}
+          <ScrollArea
+            className="h-full w-full"
+            contentClassName="min-h-full flex flex-col"
+          >
+            <div className="my-auto w-full">
+              <Routes>
+                <Route path="/" element={<Navigate to="/pullups" replace />} />
+                <Route path="/pullups" element={<PullupPage />} />
+                <Route
+                  path="/water"
+                  element={<ComingSoon challenge="water" />}
+                />
+                <Route
+                  path="/sleep"
+                  element={<ComingSoon challenge="sleep" />}
+                />
+                <Route
+                  path="/reading"
+                  element={<ComingSoon challenge="reading" />}
+                />
+                <Route path="*" element={<Navigate to="/pullups" replace />} />
+              </Routes>
+            </div>
           </ScrollArea>
         </main>
 

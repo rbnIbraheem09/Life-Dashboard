@@ -7,6 +7,11 @@ type ScrollAreaProps = {
   children: ReactNode
   /** ClassName for the outer (clipping) container — carries layout sizing. */
   className?: string
+  /** ClassName for the inner content wrapper. Lets a caller make the
+   *  content fill the viewport and center its child (e.g.
+   *  `min-h-full flex flex-col` + a `my-auto` child) without the
+   *  scrolled component having to know about it. */
+  contentClassName?: string
   /** Scroll direction. Defaults to 'vertical'. */
   direction?: Direction
 }
@@ -33,6 +38,7 @@ type ScrollAreaProps = {
 export function ScrollArea({
   children,
   className,
+  contentClassName,
   direction = 'vertical',
 }: ScrollAreaProps) {
   const isVertical = direction === 'vertical'
@@ -122,6 +128,7 @@ export function ScrollArea({
       >
         <div
           ref={contentRef}
+          className={contentClassName}
           style={
             isVertical ? undefined : { width: 'max-content', minWidth: '100%' }
           }
