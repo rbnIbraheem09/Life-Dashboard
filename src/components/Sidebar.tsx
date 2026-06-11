@@ -94,14 +94,19 @@ export function Sidebar() {
   // corners and a drop shadow, with margin all around (10px) so the
   // window background shows through on every side. The traffic
   // lights and the panel-toggle button sit inside the panel's top
-  // zone.
+  // edge, sharing the same left/right padding (px-5) as the brand
+  // block below, so the visual rhythm is consistent down the panel.
   //
-  // Because tauri.conf.json uses `titleBarStyle: "Transparent"`,
-  // the OS doesn't draw traffic lights — we render them as React
-  // buttons (see TrafficLights.tsx) and call `appWindow.minimize()`,
-  // `toggleMaximize()`, `close()` from them. That's the only way
-  // to get the traffic lights visually inside a panel that has
-  // margin from the window's top-left.
+  // Because tauri.conf.json uses `titleBarStyle: "Overlay"` and
+  // `trafficLightPosition: { x: -100, y: -100 }` to push the
+  // OS-drawn traffic lights off-screen, the OS doesn't draw
+  // traffic lights — we render them as React buttons (see
+  // TrafficLights.tsx) and call `appWindow.minimize()`,
+  // `maximize()` / `unmaximize()`, and `close()` from them. That
+  // is the only way to get the traffic lights visually inside a
+  // panel that has margin from the window's top-left, while also
+  // keeping the green light's behavior aligned with macOS native
+  // semantics (see TrafficLights.tsx for the maximize fix).
   return (
     <div
       className={cn(
@@ -113,12 +118,16 @@ export function Sidebar() {
       )}
     >
       {/* Top chrome row — traffic lights on the left, panel toggle on
-          the right. Both sit inside the panel's top zone with proper
-          margin from the panel's rounded corner. data-window-drag-zone
-          makes the empty space between them draggable. */}
+          the right. The row is 28px tall (h-7) with px-5 to match the
+          brand block's horizontal padding, and pt-0 because the
+          wrapper's 10px padding already gives the gap from the
+          window's top edge. data-window-drag-zone makes the empty
+          space between the lights and the toggle draggable. The
+          lights and the toggle are <button> elements so the drag
+          hook skips them and the click still fires. */}
       <div
         data-window-drag-zone
-        className="h-[34px] flex items-center justify-between px-3 pt-2 shrink-0"
+        className="h-7 flex items-center justify-between px-5 shrink-0"
       >
         <TrafficLights />
         <PanelToggle />

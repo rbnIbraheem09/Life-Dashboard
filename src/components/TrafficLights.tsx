@@ -1,22 +1,34 @@
 /**
  * TrafficLights — the macOS close / minimize / maximize buttons drawn
  * as React buttons instead of OS chrome. Required because the window
- * uses `titleBarStyle: "Transparent"` (see tauri.conf.json), which
- * tells macOS not to draw its own traffic lights.
+ * uses `titleBarStyle: "Overlay"` (see tauri.conf.json) and we push
+ * the OS-drawn traffic lights off-screen with
+ * `trafficLightPosition: { x: -100, y: -100 }`. The WebView is
+ * therefore responsible for rendering the lights.
  *
  * Why custom:
- *   With a transparent title bar, the WebView is responsible for
- *   rendering the traffic lights. This is what lets the lights sit
- *   visually inside a floating panel that has margin from the
- *   window's top-left corner — impossible with `titleBarStyle:
- *   "Overlay"` because the OS always draws the lights at fixed
- *   window coordinates (0, 0).
+ *   The OS-drawn overlay lights, when not pushed off-screen, always
+ *   render at fixed window coordinates (0, 0) — incompatible with
+ *   a floating panel that has margin from the window's top-left.
+ *   So we push them off-screen and render our own inside the
+ *   panel. This is what Linear / Raycast / Arc do.
  *
  * Wiring:
  *   Each button calls a Tauri command via `getCurrentWindow()`:
  *     - close  → appWindow.close()
  *     - min    → appWindow.minimize()
- *     - max    → appWindow.toggleMaximize()
+ *     - max    → maximize() if not currently maximized, else
+ *                unmaximize() — read via isMaximized() first
+ *
+ * Why not toggleMaximize():
+ *   In Overlay mode, Tauri 2's `toggleMaximize()` on macOS ends up
+ *   driving the wrong OS state and the user sees the window jump
+ *   into macOS native fullscreen (which hides the dock and the
+ *   title bar) instead of the normal "fits the screen with the
+ *   title bar still visible" behavior that Finder, Safari, and
+ *   Notes use. Using the explicit maximize() / unmaximize() pair
+ *   with an isMaximized() check before each click gives the
+ *   expected macOS native maximize semantics.
  *
  * Hover state (real macOS behavior):
  *   On hover, each light reveals its glyph (×, −, +) using the
@@ -145,7 +157,21 @@ export function TrafficLights() {
         color="#28C840"
         glyph={<MaxGlyph />}
         label="Maximize"
-        onClick={safe(() => appWindow!.toggleMaximize())}
+        onClick={safe(async () => {
+          // Read the current maximized state, then flip it with
+          // the explicit maximize()/unmaximize() pair. Avoids
+          // toggleMaximize(), which misbehaves in Overlay mode on
+          // macOS (drives the window into native fullscreen
+          // instead of macOS-standard maximize). See file header
+          // for the full explanation.
+          if (!appWindow) return
+          const isMax = await appWindow.isMaximized()
+          if (isMax) {
+            await appWindow.unmaximize()
+          } else {
+            await appWindow.maximize()
+          }
+        })}
       />
     </div>
   )

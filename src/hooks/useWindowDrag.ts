@@ -14,8 +14,8 @@
  *   element marked with `data-window-drag-zone`. Marking is opt-in, so
  *   a card, a button, a nav link, or a scrollable region can NEVER
  *   accidentally start a drag. This is the modern macOS pattern:
- *   a thin seamless strip at the top of the window — typically the
- *   title-bar area of the sidebar — drags; everything else is fully
+ *   the top edge of the sidebar (its chrome row with the traffic
+ *   lights and the panel toggle) drags; everything else is fully
  *   interactive.
  *
  * Interactive exclusion:
@@ -29,7 +29,10 @@
  * Double-click:
  *   A real macOS title bar maximizes the window on double-click. We
  *   honor that: a second `pointerdown` within 350ms of the first
- *   toggles maximize instead of starting a drag.
+ *   flips the maximized state instead of starting a drag. Uses
+ *   the explicit maximize() / unmaximize() pair with an
+ *   isMaximized() check, same as the green traffic light — see
+ *   TrafficLights.tsx for the rationale.
  */
 
 import { useEffect, useRef } from 'react'
@@ -89,7 +92,18 @@ export function useWindowDrag() {
       e.preventDefault()
 
       if (isDouble) {
-        appWindow.toggleMaximize().catch(() => {})
+        // Same maximize fix as TrafficLights.tsx: explicit
+        // maximize/unmaximize driven by isMaximized(), not
+        // toggleMaximize() (which drives the wrong OS state in
+        // Overlay mode on macOS).
+        appWindow
+          .isMaximized()
+          .then((isMax) =>
+            isMax
+              ? appWindow.unmaximize()
+              : appWindow.maximize(),
+          )
+          .catch(() => {})
       } else {
         appWindow.startDragging().catch(() => {})
       }
