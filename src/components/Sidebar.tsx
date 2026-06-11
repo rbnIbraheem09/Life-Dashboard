@@ -101,16 +101,18 @@ export function Sidebar() {
 
   return (
     /* The <aside> opts out of drag so the nav links and buttons stay clickable.
-       The root container in App.tsx is the drag region; the empty top-right
-       of the main area is where the user grabs to move the window. */
+       The native macOS title bar (decorations: true + titleBarStyle: "Overlay")
+       is the drag region — the user grabs the top of the window to move it,
+       and our content flows underneath the floating traffic lights. */
     <aside
       className="w-[240px] shrink-0 h-full flex flex-col bg-[var(--surface)] border-r border-[var(--border)]"
       data-tauri-drag-region={false}
       style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
     >
-      {/* Brand block — padding-left of 80px leaves room for the 3 macOS traffic
-          light buttons that sit at top-left of the window (decorations: false
-          + titleBarStyle: "Overlay" positions them in OS coordinates). */}
+      {/* Brand block — padding-left 80px leaves room for the floating macOS
+          traffic lights that sit at top-left of the window via
+          titleBarStyle: "Overlay". They overlay our content (don't push it),
+          so we pad the brand row to keep the "Active" dot clear. */}
       <div
         className="px-5 pt-3 pb-3 flex items-center gap-2"
         style={{ paddingLeft: '80px' }}

@@ -7,14 +7,12 @@ import PullupPage from './pages/PullupPage'
 export default function App() {
   return (
     <BrowserRouter>
-      {/* Tauri shell: full custom chrome, no native title bar.
-          The root <div> is the window drag region. The sidebar <aside>
-          (rendered inside) explicitly opts out so nav links stay clickable. */}
-      <div
-        className="h-full flex overflow-hidden"
-        data-tauri-drag-region
-        style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
-      >
+      {/* Tauri shell: native macOS window chrome (rounded corners, drop shadow,
+          traffic lights, title bar drag region) + titleBarStyle: "Overlay"
+          so our dark content flows under the floating traffic lights.
+          The native title bar IS the drag region — no custom data-tauri-drag-region
+          needed. Just a flex row of sidebar | main. */}
+      <div className="h-full flex overflow-hidden">
         <Sidebar />
         <main
           className="flex-1 overflow-y-auto"
