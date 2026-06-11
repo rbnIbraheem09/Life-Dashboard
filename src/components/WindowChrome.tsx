@@ -1,22 +1,29 @@
 import { PanelToggle } from './PanelToggle'
+import { cn } from '../lib/cn'
 
 /**
  * WindowChrome — the sidebar toggle, anchored to the WINDOW (not the
- * collapsing sidebar) so it is always reachable.
+ * collapsing sidebar) so its position is stable, but its VISIBILITY rides
+ * with the sidebar: it fades out when the sidebar collapses and fades back
+ * in when the sidebar is pinned or peeked. This is what kills the "lonely
+ * toggle floating in empty space" look when collapsed.
  *
- * The traffic lights are REAL macOS lights, drawn by the OS at
- * `trafficLightPosition` (see tauri.conf.json). They sit just to the
- * left of this toggle and can never be hidden by a collapsing panel.
- *
- * Window dragging is handled by useWindowDrag (the top strip of the
- * window) — there is no visible chrome bar here, by design.
+ * The traffic lights are real macOS lights drawn by the OS at
+ * `trafficLightPosition` (see tauri.conf.json); this toggle is tuned to sit
+ * just to their right and vertically centered with them.
  */
-export function WindowChrome() {
-  // left-[92px] parks the toggle just right of the three OS-drawn lights
-  // (which start at trafficLightPosition x:18). top-[15px] vertically
-  // aligns it with them. Both are fine-tuned visually in Task 5.
+export function WindowChrome({ visible }: { visible: boolean }) {
+  // top-[16px] vertically centers the 24px toggle against the OS lights;
+  // left-[82px] parks it just right of the three lights (which start at
+  // trafficLightPosition x:18). Nudge these if the alignment is off.
   return (
-    <div className="absolute top-[15px] left-[92px] z-30">
+    <div
+      className={cn(
+        'absolute top-[16px] left-[82px] z-30',
+        'transition-opacity duration-[var(--motion-mid)] ease-out',
+        visible ? 'opacity-100' : 'opacity-0 pointer-events-none',
+      )}
+    >
       <PanelToggle />
     </div>
   )
