@@ -109,13 +109,16 @@ export function Sidebar() {
       data-tauri-drag-region={false}
       style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
     >
-      {/* Brand block — padding-left 80px leaves room for the floating macOS
-          traffic lights that sit at top-left of the window via
-          titleBarStyle: "Overlay". They overlay our content (don't push it),
-          so we pad the brand row to keep the "Active" dot clear. */}
+      {/* Brand block — padding-left 100px leaves comfortable breathing room
+          after the macOS traffic lights that overlay the top-left of the
+          window via titleBarStyle: "Overlay". The brand row IS the drag
+          handle (marked data-tauri-drag-region); the OS title bar overlay
+          has its own drag strip, but this row gives us a reliable fallback
+          and matches the visual location the user expects to grab. */}
       <div
         className="px-5 pt-3 pb-3 flex items-center gap-2"
-        style={{ paddingLeft: '80px' }}
+        style={{ paddingLeft: '100px', WebkitAppRegion: 'drag' } as React.CSSProperties}
+        data-tauri-drag-region
       >
         <span
           className="inline-block w-2 h-2 rounded-full bg-[var(--accent-1)]"
