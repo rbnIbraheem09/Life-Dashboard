@@ -90,14 +90,66 @@
    it never intercepts clicks, scroll, or window drag. */
 .iznic-aurora {
   position: fixed;
-  inset: 0;
+  /* Oversized so the drift/parallax transform never reveals a hard edge. */
+  inset: -12%;
   pointer-events: none;
   z-index: 0;
+  will-change: transform;
   background:
     radial-gradient(ellipse 60% 50% at var(--aurora-1-x) var(--aurora-1-y), var(--aurora-1-c) 0%, transparent 70%),
     radial-gradient(ellipse 50% 40% at var(--aurora-2-x) var(--aurora-2-y), var(--aurora-2-c) 0%, transparent 70%),
     radial-gradient(ellipse 70% 50% at var(--aurora-3-x) var(--aurora-3-y), var(--aurora-3-c) 0%, transparent 60%);
   transition: background var(--motion-mid) ease;
+}
+
+/* ── Grain / dither ──
+   A fixed, ultra-subtle SVG-noise overlay (<3% opacity) sitting just above
+   the aurora (z-1) and below the content (z-10). It dithers the gradient
+   banding you'd otherwise see in dark radial glows, and reads as a faint,
+   premium film grain. The noise tiles seamlessly (stitchTiles) and is
+   desaturated so it stays color-neutral across themes. */
+.iznic-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── Hover-glow cards ──
+   Opt-in via the `glow-card` class. On hover: a small lift, an accent
+   border + glow, and a soft sheen that tracks the cursor across the card
+   (--mx/--my are set by the useGlowCards hook). Pure CSS + two style props;
+   no per-card JS. */
+.glow-card {
+  position: relative;
+  transition:
+    transform var(--motion-mid) ease,
+    box-shadow var(--motion-mid) ease,
+    border-color var(--motion-mid) ease;
+}
+.glow-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--motion-mid) ease;
+  background: radial-gradient(
+    240px circle at var(--mx, 50%) var(--my, 50%),
+    color-mix(in srgb, var(--accent-1) 14%, transparent),
+    transparent 65%
+  );
+}
+.glow-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-active);
+  box-shadow: 0 14px 36px -16px color-mix(in srgb, var(--accent-1) 22%, transparent);
+}
+.glow-card:hover::after {
+  opacity: 1;
 }
 
 /* ── Three-font utility classes (mirrors IznicOS) ── */

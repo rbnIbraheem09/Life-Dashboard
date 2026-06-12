@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Sidebar } from './components/Sidebar'
 import { WindowChrome } from './components/WindowChrome'
+import { AuroraLayer } from './components/AuroraLayer'
 import { ScrollArea } from './components/ScrollArea'
 import { ComingSoon } from './components/ComingSoon'
 import { HelpOverlay } from './components/HelpOverlay'
 import PullupPage from './pages/PullupPage'
 import SettingsPage from './pages/SettingsPage'
 import { useWindowDrag } from './hooks/useWindowDrag'
+import { useGlowCards } from './hooks/useGlowCards'
 import { useUi } from './store/ui'
 import { cn } from './lib/cn'
 import './store/theme' // applies the saved theme on boot, before first paint
@@ -33,6 +35,7 @@ import './store/theme' // applies the saved theme on boot, before first paint
  */
 export default function App() {
   useWindowDrag()
+  useGlowCards()
   const pinned = useUi((s) => s.sidebarOpen)
   const togglePinned = useUi((s) => s.toggleSidebar)
   const setPinned = useUi((s) => s.setSidebarOpen)
@@ -86,9 +89,10 @@ export default function App() {
   return (
     <BrowserRouter>
       <div className="relative h-full overflow-hidden">
-        {/* Aurora glow layer — fixed behind everything, recolored per theme.
-            The content layer below is transparent so it shows through. */}
-        <div className="iznic-aurora" />
+        {/* Living aurora + grain — fixed behind everything, recolored per
+            theme, gently drifting and cursor-reactive. The content layer
+            below is transparent so it shows through. */}
+        <AuroraLayer />
         <div className="relative z-10 h-full flex overflow-hidden">
         {/* Spacer — reserves the sidebar's width ONLY when pinned, so the
             content sits beside it. Collapses to 0 when unpinned. */}

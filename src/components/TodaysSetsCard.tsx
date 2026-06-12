@@ -84,7 +84,7 @@ export function TodaysSetsCard() {
 
   return (
     <div
-      className="border border-[var(--border)] rounded-[var(--radius)] px-7 py-6"
+      className="border border-[var(--border)] rounded-[var(--radius)] px-7 py-6 glow-card"
       style={containerStyle}
     >
       {/* Eyebrow + total */}

@@ -60,7 +60,7 @@ export function HeroChallengeCard() {
 
   return (
     <div
-      className="border border-[var(--border)] rounded-[var(--radius)] px-9 py-8"
+      className="border border-[var(--border)] rounded-[var(--radius)] px-9 py-8 glow-card"
       style={containerStyle}
     >
       {/* Eyebrow row: dot + label left, goal hint right */}
