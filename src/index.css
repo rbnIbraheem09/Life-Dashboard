@@ -25,6 +25,13 @@
   /* Custom cubic-bezier for the sidebar slide. Starts fast, ends softly —
      the "premium panel" feel that Linear/Raycast use. */
   --ease-panel: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Aurora wash — soft per-theme radial glows behind everything. The theme
+     store (store/theme.ts) overrides these on load; these are the Aurora
+     defaults so the first paint is correct even before JS runs. */
+  --aurora-1-x: 15%; --aurora-1-y: 10%; --aurora-1-c: rgba(167,139,250,0.18);
+  --aurora-2-x: 90%; --aurora-2-y: 30%; --aurora-2-c: rgba(247,114,182,0.10);
+  --aurora-3-x: 70%; --aurora-3-y: 95%; --aurora-3-c: rgba(96,165,250,0.08);
 }
 
 /* ── Base ── */
@@ -73,6 +80,24 @@
     user-select: text;
     -webkit-user-select: text;
   }
+}
+
+/* ── Aurora glow layer ──
+   A fixed, full-window layer of soft per-theme radial glows, mounted in
+   App.tsx behind the content (z-0; content sits at z-10). This is the
+   ambient colored light that gives the app its depth — recolored per theme
+   via the --aurora-* vars (set by store/theme.ts). pointer-events:none so
+   it never intercepts clicks, scroll, or window drag. */
+.iznic-aurora {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at var(--aurora-1-x) var(--aurora-1-y), var(--aurora-1-c) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at var(--aurora-2-x) var(--aurora-2-y), var(--aurora-2-c) 0%, transparent 70%),
+    radial-gradient(ellipse 70% 50% at var(--aurora-3-x) var(--aurora-3-y), var(--aurora-3-c) 0%, transparent 60%);
+  transition: background var(--motion-mid) ease;
 }
 
 /* ── Three-font utility classes (mirrors IznicOS) ── */

@@ -47,6 +47,16 @@ function ReadingIcon() {
   )
 }
 
+function GearIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"
+      strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+      <circle cx="8" cy="8" r="2" />
+      <path d="M8 1.6v1.8M8 12.6v1.8M2.6 8h1.8M11.6 8h1.8M4.05 4.05l1.27 1.27M10.68 10.68l1.27 1.27M11.95 4.05l-1.27 1.27M5.32 10.68l-1.27 1.27" />
+    </svg>
+  )
+}
+
 const BUILT_IN_PAGES = [
   { id: 'pullups', path: '/pullups', label: 'Pullups', icon: <PullupsIcon /> },
   { id: 'water', path: '/water', label: 'Water', icon: <WaterIcon /> },
@@ -170,6 +180,23 @@ export function Sidebar() {
       {/* Footer — export / import. */}
       <div className="px-3 py-3 border-t border-[var(--border)] flex flex-col gap-0.5">
         <span className="iz-label px-3 mb-1">Data</span>
+        <NavLink
+          to="/settings"
+          className={({ isActive }) =>
+            cn(
+              'flex items-center gap-2.5 px-3 py-1.5 rounded-md text-[12px]',
+              'transition-colors duration-[var(--motion-fast)]',
+              isActive
+                ? 'text-[var(--text)] bg-white/[0.04]'
+                : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-white/[0.03]',
+            )
+          }
+        >
+          <span className="w-4 inline-flex justify-center">
+            <GearIcon />
+          </span>
+          Settings
+        </NavLink>
         <button
           type="button"
           onClick={handleExport}

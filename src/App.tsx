@@ -6,9 +6,11 @@ import { ScrollArea } from './components/ScrollArea'
 import { ComingSoon } from './components/ComingSoon'
 import { HelpOverlay } from './components/HelpOverlay'
 import PullupPage from './pages/PullupPage'
+import SettingsPage from './pages/SettingsPage'
 import { useWindowDrag } from './hooks/useWindowDrag'
 import { useUi } from './store/ui'
 import { cn } from './lib/cn'
+import './store/theme' // applies the saved theme on boot, before first paint
 
 /**
  * Layout — Arc-style auto-hiding sidebar.
@@ -83,7 +85,11 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div className="relative h-full flex overflow-hidden bg-[var(--bg)]">
+      <div className="relative h-full overflow-hidden">
+        {/* Aurora glow layer — fixed behind everything, recolored per theme.
+            The content layer below is transparent so it shows through. */}
+        <div className="iznic-aurora" />
+        <div className="relative z-10 h-full flex overflow-hidden">
         {/* Spacer — reserves the sidebar's width ONLY when pinned, so the
             content sits beside it. Collapses to 0 when unpinned. */}
         <div
@@ -108,6 +114,7 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<Navigate to="/pullups" replace />} />
                 <Route path="/pullups" element={<PullupPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
                 <Route
                   path="/water"
                   element={<ComingSoon challenge="water" />}
@@ -156,6 +163,7 @@ export default function App() {
               and sit just to its left. */}
           <WindowChrome />
           <Sidebar />
+        </div>
         </div>
       </div>
       <HelpOverlay />
