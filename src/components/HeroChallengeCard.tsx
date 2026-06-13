@@ -9,11 +9,8 @@ const EMPTY: PullupSet[] = []
 
 const GOAL = 100
 
-// Same premium gradient wrapper as TodaysSetsCard so the hero + sets read as a pair.
-const containerStyle: React.CSSProperties = {
-  background:
-    'linear-gradient(135deg, color-mix(in srgb, var(--accent-1) 6%, transparent), color-mix(in srgb, var(--accent-2) 4%, transparent))',
-}
+// Background comes from the shared `.iz-panel` surface (toggled globally in
+// Settings between the surface look and the accent-gradient look).
 
 // Default gradient (violet → pink → amber); shifts amber-warm once the goal is hit.
 const gradientStyle: React.CSSProperties = {
@@ -59,10 +56,7 @@ export function HeroChallengeCard() {
       } logged${time ? ` · ${time}` : ''}`
 
   return (
-    <div
-      className="border border-[var(--border)] rounded-[var(--radius)] px-9 py-8 glow-card"
-      style={containerStyle}
-    >
+    <div className="iz-panel border border-[var(--border)] rounded-[var(--radius)] px-9 py-8 glow-card">
       {/* Eyebrow row: dot + label left, goal hint right */}
       <div className="flex items-center gap-2 mb-6">
         <span

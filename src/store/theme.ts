@@ -120,6 +120,23 @@ export const THEMES: Theme[] = [
 const KEY = 'life-dashboard:theme:v1'
 const DEFAULT_ID = 'aurora'
 
+/** Global panel surface look — both values are existing card configs:
+ *  opaque = the Stats/Activity surface; transparent = the Hero/Sets gradient.
+ *  Driven purely by the data-panel-style attribute + --panel-bg in index.css. */
+export type PanelStyle = 'opaque' | 'transparent'
+const PANEL_KEY = 'life-dashboard:panelstyle:v1'
+const DEFAULT_PANEL_STYLE: PanelStyle = 'opaque'
+
+function loadPanelStyle(): PanelStyle {
+  try {
+    return localStorage.getItem(PANEL_KEY) === 'transparent'
+      ? 'transparent'
+      : DEFAULT_PANEL_STYLE
+  } catch {
+    return DEFAULT_PANEL_STYLE
+  }
+}
+
 function themeById(id: string): Theme {
   return THEMES.find((t) => t.id === id) ?? THEMES[0]
 }
@@ -133,7 +150,7 @@ function loadThemeId(): string {
 }
 
 /** Write a theme's tokens onto :root. Repaints the whole app + the aurora. */
-function applyTheme(theme: Theme): void {
+function applyTheme(theme: Theme, panelStyle: PanelStyle): void {
   const r = document.documentElement.style
   const c = theme.colors
   r.setProperty('--bg', c.bg)
@@ -158,26 +175,39 @@ function applyTheme(theme: Theme): void {
     r.setProperty(`--aurora-${i + 1}-c`, s?.color ?? 'transparent')
   }
   document.documentElement.dataset.themeMode = theme.mode
+  document.documentElement.dataset.panelStyle = panelStyle
 }
 
-// Apply the saved theme at module load — before React's first paint — so
-// there's no flash of the default theme. App.tsx imports this for the effect.
-applyTheme(themeById(loadThemeId()))
+// Apply the saved theme + panel style at module load — before React's first
+// paint — so there's no flash of defaults. App.tsx imports this for the effect.
+applyTheme(themeById(loadThemeId()), loadPanelStyle())
 
 type ThemeState = {
   themeId: string
+  panelStyle: PanelStyle
   setTheme: (id: string) => void
+  setPanelStyle: (style: PanelStyle) => void
 }
 
-export const useThemeStore = create<ThemeState>((set) => ({
+export const useThemeStore = create<ThemeState>((set, get) => ({
   themeId: loadThemeId(),
+  panelStyle: loadPanelStyle(),
   setTheme: (id) => {
-    applyTheme(themeById(id))
+    applyTheme(themeById(id), get().panelStyle)
     try {
       localStorage.setItem(KEY, id)
     } catch {
       /* storage unavailable — theme still applies for this session */
     }
     set({ themeId: id })
+  },
+  setPanelStyle: (style) => {
+    applyTheme(themeById(get().themeId), style)
+    try {
+      localStorage.setItem(PANEL_KEY, style)
+    } catch {
+      /* storage unavailable — still applies for this session */
+    }
+    set({ panelStyle: style })
   },
 }))

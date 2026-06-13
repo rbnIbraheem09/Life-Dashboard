@@ -157,7 +157,7 @@ export function ActivityGrid() {
   }
 
   return (
-    <div className="border border-[var(--border)] rounded-[var(--radius)] bg-[var(--surface)] px-7 py-6 glow-card">
+    <div className="border border-[var(--border)] rounded-[var(--radius)] iz-panel px-7 py-6 glow-card">
       {/* Eyebrow + toggle */}
       <div className="flex items-center gap-2 mb-5">
         <span

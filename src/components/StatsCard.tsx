@@ -58,7 +58,7 @@ export function StatsCard() {
   ]
 
   return (
-    <div className="flex flex-col h-full border border-[var(--border)] rounded-[var(--radius)] bg-[var(--surface)] px-7 py-6 glow-card">
+    <div className="flex flex-col h-full border border-[var(--border)] rounded-[var(--radius)] iz-panel px-7 py-6 glow-card">
       {/* Eyebrow */}
       <div className="flex items-center gap-2">
         <span

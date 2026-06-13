@@ -9,10 +9,8 @@ import type { PullupSet } from '../types'
 // no day entry exists yet (avoids re-render churn / getSnapshot warnings).
 const EMPTY: PullupSet[] = []
 
-const containerStyle: React.CSSProperties = {
-  background:
-    'linear-gradient(135deg, color-mix(in srgb, var(--accent-1) 6%, transparent), color-mix(in srgb, var(--accent-2) 4%, transparent))',
-}
+// Background comes from the shared `.iz-panel` surface (toggled globally in
+// Settings between the surface look and the accent-gradient look).
 
 function formatTime(iso: string): string {
   try {
@@ -83,10 +81,7 @@ export function TodaysSetsCard() {
   }
 
   return (
-    <div
-      className="border border-[var(--border)] rounded-[var(--radius)] px-7 py-6 glow-card"
-      style={containerStyle}
-    >
+    <div className="iz-panel border border-[var(--border)] rounded-[var(--radius)] px-7 py-6 glow-card">
       {/* Eyebrow + total */}
       <div className="flex items-center gap-2 mb-5">
         <span

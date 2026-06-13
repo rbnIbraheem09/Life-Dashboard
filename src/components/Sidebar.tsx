@@ -125,11 +125,10 @@ export function Sidebar() {
   return (
     <div
       className={cn(
-        'h-full w-[240px] flex flex-col overflow-hidden',
+        'iz-panel h-full w-[240px] flex flex-col overflow-hidden',
         'rounded-[var(--radius)]',
         'border border-[var(--border)]',
         'shadow-[0_8px_24px_-8px_rgba(0,0,0,0.5),0_2px_8px_-2px_rgba(0,0,0,0.3)]',
-        'bg-[var(--surface)]',
       )}
     >
       {/* Brand block — sits at the top of the panel. The chrome

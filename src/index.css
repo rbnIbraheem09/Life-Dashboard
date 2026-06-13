@@ -32,6 +32,24 @@
   --aurora-1-x: 15%; --aurora-1-y: 10%; --aurora-1-c: rgba(167,139,250,0.18);
   --aurora-2-x: 90%; --aurora-2-y: 30%; --aurora-2-c: rgba(247,114,182,0.10);
   --aurora-3-x: 70%; --aurora-3-y: 95%; --aurora-3-c: rgba(96,165,250,0.08);
+
+  /* Panel background — toggled globally (Settings → Surface) between the two
+     looks that already exist. Opaque (default) = the Stats/Activity surface;
+     Transparent (override below) = the Hero/Sets faint accent gradient. */
+  --panel-bg: var(--surface);
+}
+
+/* "Transparent" panel style: every panel adopts the Hero/Sets accent gradient
+   (verbatim — the exact value those cards already use). */
+:root[data-panel-style='transparent'] {
+  --panel-bg: linear-gradient(135deg, color-mix(in srgb, var(--accent-1) 6%, transparent), color-mix(in srgb, var(--accent-2) 4%, transparent));
+}
+
+/* Shared panel surface — every panel (the 4 cards + the sidebar) uses this so
+   the toggle restyles them all at once. `background` (not background-color) so
+   it accepts the gradient value in transparent mode. */
+.iz-panel {
+  background: var(--panel-bg);
 }
 
 /* ── Base ── */
