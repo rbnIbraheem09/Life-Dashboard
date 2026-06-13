@@ -131,14 +131,17 @@
 /* ── Hover-lift cards ──
    Opt-in via the `glow-card` class: on hover, a small lift + an accent
    border and soft glow. Pure CSS, no JS. */
+/* NOTE: no `transform` here, on purpose. A transform makes an element the
+   containing block for any position:fixed descendant — and ActivityGrid is a
+   glow-card that hosts the fixed DayDrawer, so a hover transform would
+   re-anchor/break the drawer. Hover uses only border + shadow (paint-only,
+   safe for fixed descendants). */
 .glow-card {
   transition:
-    transform var(--motion-mid) ease,
     box-shadow var(--motion-mid) ease,
     border-color var(--motion-mid) ease;
 }
 .glow-card:hover {
-  transform: translateY(-2px);
   border-color: var(--border-active);
   box-shadow: 0 14px 36px -16px color-mix(in srgb, var(--accent-1) 22%, transparent);
 }
