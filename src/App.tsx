@@ -9,7 +9,6 @@ import { HelpOverlay } from './components/HelpOverlay'
 import PullupPage from './pages/PullupPage'
 import SettingsPage from './pages/SettingsPage'
 import { useWindowDrag } from './hooks/useWindowDrag'
-import { useGlowCards } from './hooks/useGlowCards'
 import { useUi } from './store/ui'
 import { cn } from './lib/cn'
 import './store/theme' // applies the saved theme on boot, before first paint
@@ -35,7 +34,6 @@ import './store/theme' // applies the saved theme on boot, before first paint
  */
 export default function App() {
   useWindowDrag()
-  useGlowCards()
   const pinned = useUi((s) => s.sidebarOpen)
   const togglePinned = useUi((s) => s.toggleSidebar)
   const setPinned = useUi((s) => s.setSidebarOpen)
