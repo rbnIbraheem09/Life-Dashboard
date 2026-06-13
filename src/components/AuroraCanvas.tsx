@@ -94,6 +94,13 @@ void main() {
 }
 `
 
+/* Aurora glow strength — how far the flow tints the bg toward the accent
+   colors. Kept low so the background stays dark and the content stays
+   readable; the flow reads as a soft glow, not a bright wash. These are the
+   two knobs to tune for contrast. */
+const INTENSITY_DARK = 0.22
+const INTENSITY_LIGHT = 0.15
+
 function hexToRgb(hex: string): [number, number, number] {
   const h = hex.replace('#', '')
   const full = h.length === 3 ? h.split('').map((ch) => ch + ch).join('') : h
@@ -177,7 +184,7 @@ export function AuroraCanvas() {
       gl.uniform3fv(uC1, hexToRgb(c.accent[0]))
       gl.uniform3fv(uC2, hexToRgb(c.accent[1] ?? c.accent[0]))
       gl.uniform3fv(uC3, hexToRgb(c.accent[2] ?? c.accent[1] ?? c.accent[0]))
-      gl.uniform1f(uIntensity, theme.mode === 'light' ? 0.45 : 0.62)
+      gl.uniform1f(uIntensity, theme.mode === 'light' ? INTENSITY_LIGHT : INTENSITY_DARK)
     }
     applyColorsRef.current = applyColors
     applyColors(useThemeStore.getState().themeId)
