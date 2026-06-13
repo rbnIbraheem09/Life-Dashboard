@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Life-Dashboard — Aurora Tuner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@300;400;500&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --surface-rgb: 14, 11, 24;
+    --card-alpha: 0.78;
+    --card-blur: 0px;
+    --text: #E8E4F0;
+    --text-dim: #A1A1AA;
+    --text-muted: #71717A;
+    --border: rgba(255,255,255,0.06);
+    --accent-1: #C4B5FD;
+    --accent-2: #F472B6;
+    --accent-3: #FBBF24;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: #06040C;
+    color: var(--text);
+    font-family: Inter, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  #aurora { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; display: block; }
+
+  .stage {
+    position: relative; z-index: 1;
+    height: 100%; overflow-y: auto;
+    padding: 64px clamp(24px, 8vw, 120px) 64px 64px;
+    display: flex; flex-direction: column; gap: 24px;
+    max-width: 1180px;
+  }
+
+  .card {
+    background: rgba(var(--surface-rgb), var(--card-alpha));
+    -webkit-backdrop-filter: blur(var(--card-blur));
+    backdrop-filter: blur(var(--card-blur));
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 30px 34px;
+  }
+  .eyebrow { display: flex; align-items: center; gap: 8px; margin-bottom: 22px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-1);
+         box-shadow: 0 0 6px 1px color-mix(in srgb, var(--accent-1) 50%, transparent); }
+  .label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500;
+           letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-muted); }
+  .label.accent { color: var(--accent-1); }
+  .spacer { flex: 1; }
+  .row-between { display: flex; align-items: center; }
+
+  .huge { font-family: Fraunces, serif; font-weight: 300; font-size: 76px; line-height: 1;
+          letter-spacing: -0.01em;
+          background: linear-gradient(135deg, var(--accent-1), var(--accent-2), var(--accent-3));
+          -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .huge-sub { font-family: Fraunces, serif; font-weight: 300; font-size: 40px; color: var(--text-muted); }
+  .subline { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--text-dim); margin-top: 18px; }
+  .bar { height: 3px; border-radius: 3px; background: rgba(255,255,255,0.06); margin-top: 22px; position: relative; }
+  .bar > i { position: absolute; left: 0; top: 0; bottom: 0; width: 34%; border-radius: 3px;
+             background: linear-gradient(90deg, var(--accent-1), var(--accent-2)); }
+
+  .set { display: flex; align-items: center; gap: 18px; padding: 18px 20px; border-radius: 12px;
+         border: 1px solid var(--border); margin-top: 12px; }
+  .set .idx { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted); }
+  .set .reps { font-family: Fraunces, serif; font-size: 28px; color: var(--text); }
+  .set .unit { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em; color: var(--text-muted); }
+  .set .time { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-dim); }
+  .set .btns { margin-left: auto; display: flex; gap: 8px; }
+  .set .btns span { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-dim);
+                    border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; }
+
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .tile { border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; }
+  .tile .k { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em;
+             text-transform: uppercase; color: var(--text-muted); }
+  .tile .v { font-family: Fraunces, serif; font-size: 34px; color: var(--text); margin-top: 6px; }
+
+  /* ── Control panel ── (always dark, theme-independent, so it stays usable) */
+  .panel {
+    position: fixed; top: 16px; right: 16px; z-index: 10;
+    width: 300px; max-height: calc(100vh - 32px); overflow-y: auto;
+    background: rgba(10,10,14,0.92); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px; padding: 16px 16px 20px; color: #E8E4F0;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    box-shadow: 0 16px 48px -12px rgba(0,0,0,0.6);
+    backdrop-filter: blur(12px);
+  }
+  .panel h2 { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #a78bfa;
+              margin: 14px 0 8px; }
+  .panel h2:first-child { margin-top: 0; }
+  .ctrl { margin-bottom: 12px; }
+  .ctrl label { display: flex; justify-content: space-between; margin-bottom: 5px; color: #c9c9d4; }
+  .ctrl label b { color: #fff; font-weight: 500; }
+  .ctrl input[type=range] { width: 100%; accent-color: #a78bfa; }
+  .themes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .themes button { font-family: inherit; font-size: 11px; padding: 7px; border-radius: 8px; cursor: pointer;
+                   background: rgba(255,255,255,0.05); color: #e8e4f0; border: 1px solid rgba(255,255,255,0.12); }
+  .themes button.on { border-color: #a78bfa; background: rgba(167,139,250,0.18); }
+  pre#out { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;
+            padding: 10px; font-size: 10.5px; line-height: 1.5; white-space: pre-wrap; color: #cdd; margin: 0; }
+  .copy { width: 100%; margin-top: 8px; padding: 8px; border-radius: 8px; cursor: pointer;
+          background: #ECEAF6; color: #1a1320; border: none; font-family: inherit; font-weight: 500; }
+  .hint { color: #8a8a96; font-size: 10.5px; line-height: 1.5; margin: 0 0 12px; }
+</style>
+</head>
+<body>
+<canvas id="aurora"></canvas>
+
+<div class="stage">
+  <div class="card">
+    <div class="eyebrow"><span class="dot"></span><span class="label accent">Pullup Challenge</span>
+      <span class="spacer"></span><span class="label">Goal · 100 reps/day</span></div>
+    <div style="display:flex;align-items:baseline;gap:10px">
+      <span class="huge">34</span><span class="huge-sub">/ 100</span>
+    </div>
+    <div class="subline">66 reps to go · 3 sets logged · 5:57 PM</div>
+    <div class="bar"><i></i></div>
+  </div>
+
+  <div class="card">
+    <div class="eyebrow"><span class="dot"></span><span class="label accent">Today's Sets</span>
+      <span class="spacer"></span><span class="label">34 reps · 3 sets</span></div>
+    <div class="set"><span class="idx">01</span><span class="reps">10</span><span class="unit">reps</span><span class="time">5:57 PM</span>
+      <span class="btns"><span>– 1</span><span>+</span><span>×</span></span></div>
+    <div class="set"><span class="idx">02</span><span class="reps">14</span><span class="unit">reps</span><span class="time">5:57 PM</span>
+      <span class="btns"><span>– 1</span><span>+</span><span>×</span></span></div>
+    <div class="set"><span class="idx">03</span><span class="reps">10</span><span class="unit">reps</span><span class="time">5:57 PM</span>
+      <span class="btns"><span>– 1</span><span>+</span><span>×</span></span></div>
+  </div>
+
+  <div class="card">
+    <div class="eyebrow"><span class="dot"></span><span class="label accent">Stats</span></div>
+    <div class="stats">
+      <div class="tile"><div class="k">Current streak</div><div class="v">0 <span style="font-size:13px;color:var(--text-muted)">days</span></div></div>
+      <div class="tile"><div class="k">Best streak</div><div class="v">1 <span style="font-size:13px;color:var(--text-muted)">day</span></div></div>
+      <div class="tile"><div class="k">Average / day</div><div class="v">48 <span style="font-size:13px;color:var(--text-muted)">reps</span></div></div>
+      <div class="tile"><div class="k">Goal hit</div><div class="v">33% <span style="font-size:13px;color:var(--text-muted)">of days</span></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <p class="hint">Tune it, hit <b>Copy values</b> (or screenshot the box at the bottom), and send me the numbers.</p>
+
+  <h2>Theme</h2>
+  <div class="themes" id="themes"></div>
+
+  <h2>Background</h2>
+  <div id="bgControls"></div>
+
+  <h2>Cards</h2>
+  <div id="cardControls"></div>
+
+  <h2>Values</h2>
+  <pre id="out"></pre>
+  <button class="copy" id="copy">Copy values</button>
+</div>
+
+<script>
+const THEMES = {
+  aurora:    { name:'Aurora',    mode:'dark',  bg:'#06040C', surface:'#0E0B18', text:'#E8E4F0', textDim:'#A1A1AA', textMuted:'#71717A', border:'rgba(255,255,255,0.06)', accent:['#C4B5FD','#F472B6','#FBBF24'] },
+  forest:    { name:'Forest',    mode:'dark',  bg:'#06100B', surface:'#0D1810', text:'#E0F2E9', textDim:'#94A89B', textMuted:'#5E7568', border:'rgba(255,255,255,0.06)', accent:['#6EE7B7','#FCD34D'] },
+  paperback: { name:'Paperback', mode:'light', bg:'#FBF7F1', surface:'#F4EFE6', text:'#2D2419', textDim:'#6B6055', textMuted:'#948677', border:'rgba(0,0,0,0.08)',         accent:['#C2410C','#B45309'] },
+  nocturne:  { name:'Nocturne',  mode:'dark',  bg:'#070A14', surface:'#0E1320', text:'#E6EAF5', textDim:'#9AA3B8', textMuted:'#646C82', border:'rgba(255,255,255,0.06)', accent:['#7DD3FC','#818CF8','#F0ABFC'] },
+};
+
+const params = {
+  intensity: 0.22, flowSpeed: 0.06, zoom: 2.4, mousePush: 0.8, warp: 1.7, vignette: 0.18,
+  surfaceAlpha: 0.78, blur: 0,
+};
+let themeId = 'aurora';
+
+function hex01(hex){ const n=parseInt(hex.replace('#',''),16); return [((n>>16)&255)/255,((n>>8)&255)/255,(n&255)/255]; }
+function hexRgbStr(hex){ const n=parseInt(hex.replace('#',''),16); return ((n>>16)&255)+', '+((n>>8)&255)+', '+(n&255); }
+
+// ── Sliders ───────────────────────────────────────────────────────────────
+const bgDefs = [
+  ['intensity','Intensity',0,1,0.01],
+  ['flowSpeed','Flow speed',0,0.3,0.005],
+  ['zoom','Zoom / scale',1,5,0.1],
+  ['mousePush','Cursor push',0,2.5,0.05],
+  ['warp','Warp (liquidness)',0.5,3,0.05],
+  ['vignette','Vignette (edge dark)',0,0.6,0.01],
+];
+const cardDefs = [
+  ['surfaceAlpha','Card opacity',0,1,0.01],
+  ['blur','Card blur (frosted)',0,40,1],
+];
+function buildSliders(defs, host){
+  host.innerHTML='';
+  defs.forEach(([key,labelText,min,max,step])=>{
+    const wrap=document.createElement('div'); wrap.className='ctrl';
+    const lab=document.createElement('label');
+    lab.innerHTML=`<span>${labelText}</span><b id="v-${key}"></b>`;
+    const inp=document.createElement('input'); inp.type='range';
+    inp.min=min; inp.max=max; inp.step=step; inp.value=params[key];
+    inp.addEventListener('input',()=>{ params[key]=parseFloat(inp.value); onParam(key); });
+    wrap.appendChild(lab); wrap.appendChild(inp); host.appendChild(wrap);
+  });
+}
+function refreshLabels(){
+  [...bgDefs,...cardDefs].forEach(([key])=>{
+    const el=document.getElementById('v-'+key); if(!el)return;
+    el.textContent = key==='blur' ? params[key]+'px' : Number(params[key]).toFixed(key==='zoom'||key==='warp'||key==='mousePush'?2:(key==='flowSpeed'?3:2));
+  });
+}
+function onParam(key){
+  if(key==='surfaceAlpha') document.documentElement.style.setProperty('--card-alpha', params.surfaceAlpha);
+  if(key==='blur') document.documentElement.style.setProperty('--card-blur', params.blur+'px');
+  refreshLabels(); writeOut();
+}
+
+function writeOut(){
+  const t=THEMES[themeId];
+  document.getElementById('out').textContent =
+`BACKGROUND (AuroraCanvas.tsx)
+  intensity:   ${params.intensity.toFixed(2)}
+  flowSpeed:   ${params.flowSpeed.toFixed(3)}
+  zoom:        ${params.zoom.toFixed(2)}
+  cursorPush:  ${params.mousePush.toFixed(2)}
+  warp:        ${params.warp.toFixed(2)}
+  vignette:    ${params.vignette.toFixed(2)}
+
+CARDS
+  surfaceAlpha: ${params.surfaceAlpha.toFixed(2)}
+  blur:         ${params.blur}px
+
+theme previewed: ${t.name} (${t.mode})`;
+}
+
+// ── Theme switch ────────────────────────────────────────────────────────────
+function applyTheme(id){
+  themeId=id; const t=THEMES[id];
+  const r=document.documentElement.style;
+  r.setProperty('--surface-rgb', hexRgbStr(t.surface));
+  r.setProperty('--text', t.text);
+  r.setProperty('--text-dim', t.textDim);
+  r.setProperty('--text-muted', t.textMuted);
+  r.setProperty('--border', t.border);
+  r.setProperty('--accent-1', t.accent[0]);
+  r.setProperty('--accent-2', t.accent[1]||t.accent[0]);
+  r.setProperty('--accent-3', t.accent[2]||t.accent[1]||t.accent[0]);
+  document.body.style.background = t.bg;
+  [...document.querySelectorAll('#themes button')].forEach(b=>b.classList.toggle('on', b.dataset.id===id));
+  writeOut();
+}
+const themesHost=document.getElementById('themes');
+Object.keys(THEMES).forEach(id=>{
+  const b=document.createElement('button'); b.textContent=THEMES[id].name; b.dataset.id=id;
+  b.addEventListener('click',()=>applyTheme(id)); themesHost.appendChild(b);
+});
+
+document.getElementById('copy').addEventListener('click',()=>{
+  navigator.clipboard.writeText(document.getElementById('out').textContent).then(()=>{
+    const btn=document.getElementById('copy'); const old=btn.textContent; btn.textContent='Copied ✓';
+    setTimeout(()=>btn.textContent=old,1200);
+  });
+});
+
+// ── WebGL aurora ────────────────────────────────────────────────────────────
+const VERT=`attribute vec2 aPos; void main(){ gl_Position=vec4(aPos,0.0,1.0); }`;
+const FRAG=`precision highp float;
+uniform float uTime,uIntensity,uFlowSpeed,uZoom,uMousePush,uWarp,uVignette;
+uniform vec2 uResolution,uMouse;
+uniform vec3 uColorBg,uColor1,uColor2,uColor3;
+float hash(vec2 p){ p=fract(p*vec2(123.34,456.21)); p+=dot(p,p+45.32); return fract(p.x*p.y); }
+float noise(vec2 p){ vec2 i=floor(p),f=fract(p);
+  float a=hash(i),b=hash(i+vec2(1.,0.)),c=hash(i+vec2(0.,1.)),d=hash(i+vec2(1.,1.));
+  vec2 u=f*f*(3.-2.*f); return mix(mix(a,b,u.x),mix(c,d,u.x),u.y); }
+float fbm(vec2 p){ float v=0.,a=0.5; for(int i=0;i<4;i++){ v+=a*noise(p); p*=2.; a*=0.5; } return v; }
+void main(){
+  vec2 uv=gl_FragCoord.xy/uResolution.xy; vec2 p=uv; p.x*=uResolution.x/uResolution.y; p*=uZoom;
+  float t=uTime*uFlowSpeed; vec2 m=(uMouse-0.5)*uMousePush;
+  vec2 q=vec2(fbm(p+t),fbm(p+vec2(5.2,1.3)-t));
+  vec2 r=vec2(fbm(p+uWarp*q+vec2(1.7,9.2)+m+0.15*t),fbm(p+uWarp*q+vec2(8.3,2.8)-m+0.12*t));
+  float f=fbm(p+(uWarp+0.1)*r);
+  vec3 col=uColorBg;
+  col=mix(col,uColor1,clamp(smoothstep(0.15,0.95,f)*uIntensity,0.,1.));
+  col=mix(col,uColor2,clamp(smoothstep(0.2,1.0,length(r))*uIntensity*0.7,0.,1.));
+  col=mix(col,uColor3,clamp(smoothstep(0.55,1.1,q.x+f)*uIntensity*0.5,0.,1.));
+  float vig=smoothstep(1.25,0.35,length(uv-0.5)); col*=mix(1.0-uVignette,1.0,vig);
+  float dn=fract(52.9829189*fract(dot(gl_FragCoord.xy,vec2(0.06711056,0.00583715))));
+  col+=(dn-0.5)/255.0;
+  gl_FragColor=vec4(col,1.0);
+}`;
+const canvas=document.getElementById('aurora');
+const gl=canvas.getContext('webgl');
+function sh(type,src){ const s=gl.createShader(type); gl.shaderSource(s,src); gl.compileShader(s);
+  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)) console.warn(gl.getShaderInfoLog(s)); return s; }
+const prog=gl.createProgram(); gl.attachShader(prog,sh(gl.VERTEX_SHADER,VERT)); gl.attachShader(prog,sh(gl.FRAGMENT_SHADER,FRAG));
+gl.linkProgram(prog); gl.useProgram(prog);
+const buf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
+const aPos=gl.getAttribLocation(prog,'aPos'); gl.enableVertexAttribArray(aPos); gl.vertexAttribPointer(aPos,2,gl.FLOAT,false,0,0);
+const U=n=>gl.getUniformLocation(prog,n);
+const u={time:U('uTime'),res:U('uResolution'),mouse:U('uMouse'),bg:U('uColorBg'),c1:U('uColor1'),c2:U('uColor2'),c3:U('uColor3'),
+         intensity:U('uIntensity'),flow:U('uFlowSpeed'),zoom:U('uZoom'),push:U('uMousePush'),warp:U('uWarp'),vig:U('uVignette')};
+const DPR=Math.min(window.devicePixelRatio||1,2);
+function resize(){ const w=Math.floor(innerWidth*DPR),h=Math.floor(innerHeight*DPR);
+  if(canvas.width!==w||canvas.height!==h){ canvas.width=w; canvas.height=h; gl.viewport(0,0,w,h); }
+  gl.uniform2f(u.res,canvas.width,canvas.height); }
+addEventListener('resize',resize);
+let tgtX=0.5,tgtY=0.5,mx=0.5,my=0.5;
+addEventListener('mousemove',e=>{ tgtX=e.clientX/innerWidth; tgtY=1-e.clientY/innerHeight; },{passive:true});
+const start=performance.now();
+function frame(now){
+  mx+=(tgtX-mx)*0.05; my+=(tgtY-my)*0.05; resize();
+  const t=THEMES[themeId];
+  gl.uniform3fv(u.bg,hex01(t.bg));
+  gl.uniform3fv(u.c1,hex01(t.accent[0]));
+  gl.uniform3fv(u.c2,hex01(t.accent[1]||t.accent[0]));
+  gl.uniform3fv(u.c3,hex01(t.accent[2]||t.accent[1]||t.accent[0]));
+  gl.uniform1f(u.intensity,params.intensity); gl.uniform1f(u.flow,params.flowSpeed);
+  gl.uniform1f(u.zoom,params.zoom); gl.uniform1f(u.push,params.mousePush);
+  gl.uniform1f(u.warp,params.warp); gl.uniform1f(u.vig,params.vignette);
+  gl.uniform1f(u.time,(now-start)/1000); gl.uniform2f(u.mouse,mx,my);
+  gl.drawArrays(gl.TRIANGLES,0,3); requestAnimationFrame(frame);
+}
+
+// ── Init ──
+buildSliders(bgDefs, document.getElementById('bgControls'));
+buildSliders(cardDefs, document.getElementById('cardControls'));
+document.documentElement.style.setProperty('--card-alpha', params.surfaceAlpha);
+document.documentElement.style.setProperty('--card-blur', params.blur+'px');
+refreshLabels(); applyTheme('aurora'); resize(); requestAnimationFrame(frame);
+</script>
+</body>
+</html>
