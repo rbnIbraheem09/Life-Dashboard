@@ -2,6 +2,7 @@ import { format } from 'date-fns'
 import { usePages } from '../store/pages'
 import { todayKey } from '../lib/date'
 import { aggregate, isGoalHit, progressPct } from '../lib/metrics'
+import { formatDuration } from '../lib/duration'
 import { AnimatedNumber } from '../motion/AnimatedNumber'
 import { AnimatedBar } from '../motion/AnimatedBar'
 import type { Entry } from '../types'
@@ -30,18 +31,29 @@ export function HeroCounter({ pageId }: { pageId: string }) {
   if (!def) return null
 
   const target = def.target
-  const unit = def.fields.find((f) => f.key === def.primaryMetric.field)?.unit ?? ''
+  const primaryField = def.fields.find((f) => f.key === def.primaryMetric.field)
+  const unit = primaryField?.unit ?? ''
+  const isDuration = primaryField?.type === 'duration'
+  const fmt = (n: number) => (isDuration ? formatDuration(n, unit || 'h') : `${Math.round(n)} ${unit}`.trim())
+
   const total = aggregate(day.entries, def.primaryMetric)
   const pct = progressPct(total, target)
   const hit = isGoalHit(total, target, day.entries.length > 0)
   const goalValue = target.kind === 'range' ? target.max : target.value
+  const goalLabel = target.kind === 'range' ? `${target.value}–${target.max}${isDuration ? 'h' : ` ${unit}`}` : fmt(goalValue)
   const time = lastTime(day.entries)
   const count = day.entries.length
 
-  const remaining = Math.max(0, goalValue - total)
-  const subline = hit
-    ? `Goal hit · ${total - goalValue} over`
-    : `${remaining} ${unit} to go · ${count} ${count === 1 ? 'entry' : 'entries'} logged${time ? ` · ${time}` : ''}`
+  let subline: string
+  if (target.kind === 'range') {
+    if (hit) subline = `In range ✓ · ${count} ${count === 1 ? 'entry' : 'entries'}${time ? ` · ${time}` : ''}`
+    else if (total < target.value) subline = `${fmt(target.value - total)} under · aim for ${goalLabel}`
+    else subline = `${fmt(total - target.max)} over · aim for ${goalLabel}`
+  } else if (hit) {
+    subline = `Goal hit · ${fmt(total - goalValue)} over`
+  } else {
+    subline = `${fmt(Math.max(0, goalValue - total))} to go · ${count} ${count === 1 ? 'entry' : 'entries'} logged${time ? ` · ${time}` : ''}`
+  }
 
   return (
     <div className="iz-panel border border-[var(--border)] rounded-[var(--radius)] px-9 py-8 glow-card">
@@ -51,18 +63,19 @@ export function HeroCounter({ pageId }: { pageId: string }) {
           style={{ boxShadow: '0 0 6px 1px color-mix(in srgb, var(--accent-1) 50%, transparent)' }}
         />
         <span className="iz-label" style={{ color: 'var(--accent-1)' }}>{def.name}</span>
-        <span className="iz-label ml-auto">Goal · {goalValue} {unit}/day</span>
+        <span className="iz-label ml-auto">Goal · {goalLabel}/day</span>
       </div>
 
       <div className="flex items-baseline gap-3 flex-wrap">
         <AnimatedNumber
           value={total}
           flash={false}
+          format={isDuration ? (n) => formatDuration(n, unit || 'h') : undefined}
           className="iz-display text-6xl sm:text-7xl leading-none tabular-nums"
           style={hit ? gradientStyleHit : gradientStyle}
         />
         <span className="iz-display text-3xl text-[var(--text-muted)] leading-none tabular-nums">
-          / {goalValue}
+          / {goalLabel}
         </span>
       </div>
 
