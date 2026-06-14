@@ -20,6 +20,14 @@ function StatCell({ label, value, unit, accent }: Stat) {
 
 const noDays = {}
 
+/** Naive singularization that covers realistic tracker units: reps→rep,
+ *  glasses→glass, minutes→minute, pages→page, hours→hour. */
+function singularize(u: string): string {
+  if (u.endsWith('ses')) return u.slice(0, -2) // glasses → glass
+  if (u.endsWith('s')) return u.slice(0, -1) // reps → rep
+  return u
+}
+
 export function StatRow({ pageId }: { pageId: string }) {
   const def = usePages((s) => s.data.pages[pageId]?.def)
   const days = usePages((s) => s.data.pages[pageId]?.data.days ?? noDays)
@@ -29,7 +37,7 @@ export function StatRow({ pageId }: { pageId: string }) {
   )
   if (!def || !stats) return null
   const unit = def.fields.find((f) => f.key === def.primaryMetric.field)?.unit ?? ''
-  const unitSingular = unit.replace(/s$/, '')
+  const unitSingular = singularize(unit)
 
   const cells: Stat[] = [
     { label: 'Current Streak', value: String(stats.currentStreak), unit: stats.currentStreak === 1 ? 'day' : 'days', accent: stats.currentStreak > 0 },
