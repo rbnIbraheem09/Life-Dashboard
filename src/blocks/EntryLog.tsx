@@ -2,6 +2,7 @@ import { usePages } from '../store/pages'
 import { todayKey } from '../lib/date'
 import { aggregate } from '../lib/metrics'
 import { EntryList } from './EntryList'
+import { AnimatedNumber } from '../motion/AnimatedNumber'
 import type { Entry } from '../types'
 
 const noEntries = { entries: [] as Entry[] }
@@ -25,7 +26,8 @@ export function EntryLog({ pageId }: { pageId: string }) {
         />
         <span className="iz-label" style={{ color: 'var(--accent-1)' }}>Today's Log</span>
         <span className="iz-label ml-auto">
-          {total} {unit} · {count} {count === 1 ? 'entry' : 'entries'}
+          <AnimatedNumber value={total} /> {unit} · {count}{' '}
+          {count === 1 ? 'entry' : 'entries'}
         </span>
       </div>
       <EntryList pageId={pageId} focusHotkey />

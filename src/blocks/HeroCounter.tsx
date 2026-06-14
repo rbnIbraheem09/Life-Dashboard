@@ -57,6 +57,7 @@ export function HeroCounter({ pageId }: { pageId: string }) {
       <div className="flex items-baseline gap-3 flex-wrap">
         <AnimatedNumber
           value={total}
+          flash={false}
           className="iz-display text-6xl sm:text-7xl leading-none tabular-nums"
           style={hit ? gradientStyleHit : gradientStyle}
         />
