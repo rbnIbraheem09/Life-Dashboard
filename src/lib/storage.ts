@@ -35,9 +35,25 @@ function isValidV1(data: unknown): data is V1Storage {
 }
 
 /**
+ * Append any builtin pages missing from `store` (e.g. pages added in a later
+ * release). Preserves every existing page, its data, and the user's order —
+ * only adds what's new, never overwrites an existing def. Returns the same
+ * object reference when nothing is missing.
+ */
+export function mergeMissingBuiltins(store: StorageV2): { store: StorageV2; added: boolean } {
+  const missing = BUILTIN_ORDER.filter((id) => !(id in store.pages))
+  if (missing.length === 0) return { store, added: false }
+
+  const pages = { ...store.pages }
+  for (const id of missing) pages[id] = { def: BUILTIN_DEFS[id], data: { days: {} } }
+  const order = [...store.order, ...missing.filter((id) => !store.order.includes(id))]
+  return { store: { ...store, pages, order }, added: true }
+}
+
+/**
  * Load order:
- *   1. valid v2 at KEY_V2  → use it
- *   2. valid v1 at KEY_V1  → migrate → persist v2 (KEY_V1 left intact as backup)
+ *   1. valid v2 at KEY_V2  → use it (merge any new builtins)
+ *   2. valid v1 at KEY_V1  → migrate → merge builtins → persist v2 (KEY_V1 left intact as backup)
  *   3. otherwise           → empty v2
  */
 export function loadStorage(): StorageV2 {
@@ -45,13 +61,17 @@ export function loadStorage(): StorageV2 {
     const rawV2 = localStorage.getItem(KEY_V2)
     if (rawV2) {
       const parsed = JSON.parse(rawV2)
-      if (isValidV2(parsed)) return parsed
+      if (isValidV2(parsed)) {
+        const { store, added } = mergeMissingBuiltins(parsed)
+        if (added) flushStorage(store)
+        return store
+      }
     }
     const rawV1 = localStorage.getItem(KEY_V1)
     if (rawV1) {
       const parsed = JSON.parse(rawV1)
       if (isValidV1(parsed)) {
-        const migrated = migrateV1toV2(parsed)
+        const migrated = mergeMissingBuiltins(migrateV1toV2(parsed)).store
         flushStorage(migrated) // persist immediately so the migration is durable
         return migrated
       }
