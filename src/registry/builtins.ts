@@ -1,0 +1,9 @@
+import type { PageDef } from '../types'
+import { PULLUPS_DEF } from './pullups'
+import { WATER_DEF } from './water'
+
+export const BUILTIN_DEFS: Record<string, PageDef> = {
+  pullups: PULLUPS_DEF,
+  water: WATER_DEF,
+}
+export const BUILTIN_ORDER = ['pullups', 'water']
