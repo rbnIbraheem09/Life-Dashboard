@@ -54,9 +54,7 @@ export function computeStats(
   const avgPerDay =
     daysLogged === 0
       ? 0
-      : Math.round(
-          logged.reduce((s, [, d]) => s + aggregate(d.entries, metric), 0) / daysLogged
-        )
+      : logged.reduce((s, [, d]) => s + aggregate(d.entries, metric), 0) / daysLogged
 
   const hitKeys = logged
     .filter(([, d]) => isGoalHit(aggregate(d.entries, metric), target, true))

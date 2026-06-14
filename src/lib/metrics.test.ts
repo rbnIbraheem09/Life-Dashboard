@@ -84,6 +84,13 @@ describe('computeStats', () => {
     expect(s.avgPerDay).toBe(75)
     expect(s.goalHitPct).toBe(50)
   })
+  it('returns avgPerDay unrounded so the view can format it', () => {
+    const days = {
+      '2026-06-10': day([e(100)]),
+      '2026-06-11': day([e(51)]),
+    }
+    expect(computeStats(days, metric, target).avgPerDay).toBe(75.5)
+  })
   it('finds the best consecutive streak', () => {
     const days = {
       '2026-06-01': day([e(100)]),

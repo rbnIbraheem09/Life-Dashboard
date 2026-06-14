@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { usePages } from '../store/pages'
 import { computeStats } from '../lib/metrics'
+import { formatDuration } from '../lib/duration'
 
 type Stat = { label: string; value: string; unit: string; accent?: boolean }
 
@@ -36,13 +37,21 @@ export function StatRow({ pageId }: { pageId: string }) {
     [days, def]
   )
   if (!def || !stats) return null
-  const unit = def.fields.find((f) => f.key === def.primaryMetric.field)?.unit ?? ''
+  const primaryField = def.fields.find((f) => f.key === def.primaryMetric.field)
+  const unit = primaryField?.unit ?? ''
   const unitSingular = singularize(unit)
+  const isDuration = primaryField?.type === 'duration'
+
+  const avgRounded = Math.round(stats.avgPerDay)
+  const avgValue = isDuration
+    ? formatDuration(stats.avgPerDay, unit || 'h')
+    : String(avgRounded)
+  const avgUnit = isDuration ? '' : avgRounded === 1 ? unitSingular : unit
 
   const cells: Stat[] = [
     { label: 'Current Streak', value: String(stats.currentStreak), unit: stats.currentStreak === 1 ? 'day' : 'days', accent: stats.currentStreak > 0 },
     { label: 'Best Streak', value: String(stats.bestStreak), unit: stats.bestStreak === 1 ? 'day' : 'days' },
-    { label: 'Average / Day', value: String(stats.avgPerDay), unit: stats.avgPerDay === 1 ? unitSingular : unit },
+    { label: 'Average / Day', value: avgValue, unit: avgUnit },
     { label: 'Goal Hit', value: `${stats.goalHitPct}%`, unit: 'of days' },
   ]
 
