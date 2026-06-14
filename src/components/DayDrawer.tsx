@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { usePages } from '../store/pages'
 import { aggregate } from '../lib/metrics'
+import { formatDuration } from '../lib/duration'
 import { ScrollArea } from './ScrollArea'
 import { EntryList } from '../blocks/EntryList'
 import { DailyRecord } from '../blocks/DailyRecord'
@@ -34,7 +35,9 @@ export function DayDrawer({
   const day = usePages((s) => s.data.pages[pageId]?.data.days[key] ?? noEntries)
   const total = def ? aggregate(day.entries, def.primaryMetric) : 0
   const count = day.entries.length
-  const unit = def?.fields.find((f) => f.key === def.primaryMetric.field)?.unit ?? ''
+  const primaryField = def?.fields.find((f) => f.key === def.primaryMetric.field)
+  const unit = primaryField?.unit ?? ''
+  const totalLabel = primaryField?.type === 'duration' ? formatDuration(total, unit || 'h') : `${total} ${unit}`
   const isDailyRecord = def?.blocks.some((b) => b.type === 'dailyRecord') ?? false
 
   useEffect(() => {
@@ -85,7 +88,7 @@ export function DayDrawer({
               {displayDate ? formatDayHeading(displayDate) : ''}
             </h2>
             <p className="iz-mono text-[11px] text-[var(--text-muted)] mt-1">
-              {total} {unit} · {count} {count === 1 ? 'entry' : 'entries'}
+              {totalLabel} · {count} {count === 1 ? 'entry' : 'entries'}
             </p>
             <div className="mt-6">
               {displayDate &&

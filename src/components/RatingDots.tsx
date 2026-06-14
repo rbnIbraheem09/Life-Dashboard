@@ -22,7 +22,7 @@ export function RatingDots({ value, scale, onChange, className }: Props) {
           <span
             className={cn(
               'inline-block w-[11px] h-[11px] rounded-full transition-colors duration-[var(--motion-fast)]',
-              filled ? 'bg-[var(--accent-1)]' : 'bg-white/[0.12]'
+              filled ? 'bg-[var(--accent-1)]' : 'bg-white/[0.08]'
             )}
             style={
               filled
