@@ -1,0 +1,21 @@
+import type { PageDef } from '../types'
+
+export const SLEEP_DEF: PageDef = {
+  schemaVersion: 1,
+  id: 'sleep',
+  name: 'Sleep',
+  emoji: '🌙',
+  fields: [
+    { key: 'hours', type: 'duration', label: 'Hours', unit: 'h', step: 0.5 },
+    { key: 'quality', type: 'rating', label: 'Quality', scale: 5 },
+  ],
+  primaryMetric: { field: 'hours', agg: 'sum' },
+  target: { kind: 'range', value: 7, max: 9 },
+  blocks: [
+    { type: 'hero' },
+    { type: 'dailyRecord' },
+    { type: 'statRow' },
+    { type: 'heatmap' },
+    { type: 'trend', metric: { field: 'hours', agg: 'sum' } },
+  ],
+}

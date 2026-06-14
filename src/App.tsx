@@ -4,7 +4,6 @@ import { Sidebar } from './components/Sidebar'
 import { WindowChrome } from './components/WindowChrome'
 import { AuroraLayer } from './components/AuroraLayer'
 import { ScrollArea } from './components/ScrollArea'
-import { ComingSoon } from './components/ComingSoon'
 import { HelpOverlay } from './components/HelpOverlay'
 import { PageRenderer } from './blocks/PageRenderer'
 import SettingsPage from './pages/SettingsPage'
@@ -118,10 +117,7 @@ export default function App() {
                 <Route path="/pullups" element={<PageRenderer pageId="pullups" />} />
                 <Route path="/water" element={<PageRenderer pageId="water" />} />
                 <Route path="/settings" element={<SettingsPage />} />
-                <Route
-                  path="/sleep"
-                  element={<ComingSoon challenge="sleep" />}
-                />
+                <Route path="/sleep" element={<PageRenderer pageId="sleep" />} />
                 <Route path="/reading" element={<PageRenderer pageId="reading" />} />
                 <Route path="*" element={<Navigate to="/pullups" replace />} />
               </Routes>
