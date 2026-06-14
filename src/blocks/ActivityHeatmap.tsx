@@ -10,6 +10,7 @@ import {
 } from 'date-fns'
 import { usePages } from '../store/pages'
 import { dayValue } from '../lib/metrics'
+import { formatDuration } from '../lib/duration'
 import { DayDrawer } from '../components/DayDrawer'
 import { dateKey, todayKey } from '../lib/date'
 import { cn } from '../lib/cn'
@@ -150,7 +151,11 @@ export function ActivityHeatmap({ pageId }: { pageId: string }) {
         type="button"
         key={cell.key}
         onClick={() => setOpenDate(cell.key)}
-        title={`${cell.key} · ${value} ${unit} · ${entryCount} ${entryCount === 1 ? 'entry' : 'entries'}`}
+        title={`${cell.key} · ${
+          def?.fields.find((f) => f.key === metric?.field)?.type === 'duration'
+            ? formatDuration(value, unit || 'h')
+            : `${value} ${unit}`
+        } · ${entryCount} ${entryCount === 1 ? 'entry' : 'entries'}`}
         className={cn(
           CELL,
           'rounded-sm cursor-pointer hover:ring-1 hover:ring-[var(--accent-1)] transition-shadow duration-[var(--motion-fast)]',
