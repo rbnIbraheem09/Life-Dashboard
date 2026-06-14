@@ -6,7 +6,7 @@ import { AuroraLayer } from './components/AuroraLayer'
 import { ScrollArea } from './components/ScrollArea'
 import { ComingSoon } from './components/ComingSoon'
 import { HelpOverlay } from './components/HelpOverlay'
-import PullupPage from './pages/PullupPage'
+import { PageRenderer } from './blocks/PageRenderer'
 import SettingsPage from './pages/SettingsPage'
 import { useWindowDrag } from './hooks/useWindowDrag'
 import { useUi } from './store/ui'
@@ -115,12 +115,9 @@ export default function App() {
             <div className="my-auto w-full">
               <Routes>
                 <Route path="/" element={<Navigate to="/pullups" replace />} />
-                <Route path="/pullups" element={<PullupPage />} />
+                <Route path="/pullups" element={<PageRenderer pageId="pullups" />} />
+                <Route path="/water" element={<PageRenderer pageId="water" />} />
                 <Route path="/settings" element={<SettingsPage />} />
-                <Route
-                  path="/water"
-                  element={<ComingSoon challenge="water" />}
-                />
                 <Route
                   path="/sleep"
                   element={<ComingSoon challenge="sleep" />}

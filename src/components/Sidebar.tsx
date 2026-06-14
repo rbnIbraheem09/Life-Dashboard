@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { NavLink } from 'react-router-dom'
-import { useDashboard } from '../store/dashboard'
+import { usePages } from '../store/pages'
 import { ScrollArea } from './ScrollArea'
 import { cn } from '../lib/cn'
 
@@ -68,7 +68,7 @@ export function Sidebar() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   function handleExport() {
-    const json = useDashboard.getState().exportJSON()
+    const json = usePages.getState().exportData()
     const blob = new Blob([json], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -86,10 +86,10 @@ export function Sidebar() {
       const text = String(reader.result ?? '')
       try {
         const parsed = JSON.parse(text)
-        if (parsed?.version !== 1 || typeof parsed.challenges !== 'object') {
+        if (parsed?.version !== 2 || typeof parsed.pages !== 'object') {
           throw new Error('Unrecognized schema')
         }
-        useDashboard.getState().importJSON(text)
+        usePages.getState().importData(text)
       } catch {
         // eslint-disable-next-line no-alert
         window.alert('Import failed: not a valid Life-Dashboard backup file.')
