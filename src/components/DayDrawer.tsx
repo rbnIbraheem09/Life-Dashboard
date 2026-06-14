@@ -5,8 +5,9 @@ import { aggregate } from '../lib/metrics'
 import { ScrollArea } from './ScrollArea'
 import { EntryList } from '../blocks/EntryList'
 import { cn } from '../lib/cn'
+import type { Entry } from '../types'
 
-const noEntries = { entries: [] }
+const noEntries = { entries: [] as Entry[] }
 
 function formatDayHeading(key: string): string {
   try { return format(new Date(`${key}T00:00:00`), 'EEEE, MMMM d') } catch { return key }

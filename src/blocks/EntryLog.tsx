@@ -2,8 +2,9 @@ import { usePages } from '../store/pages'
 import { todayKey } from '../lib/date'
 import { aggregate } from '../lib/metrics'
 import { EntryList } from './EntryList'
+import type { Entry } from '../types'
 
-const noEntries = { entries: [] }
+const noEntries = { entries: [] as Entry[] }
 
 export function EntryLog({ pageId }: { pageId: string }) {
   const today = todayKey()
