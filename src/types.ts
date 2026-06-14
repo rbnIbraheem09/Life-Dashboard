@@ -32,6 +32,7 @@ export type DayData = { entries: Entry[] } // totals are derived, never stored
 export type BlockDef =
   | { type: 'hero'; metric?: Metric }
   | { type: 'entryLog'; fields?: string[] }
+  | { type: 'dailyRecord' }
   | { type: 'statRow'; metric?: Metric }
   | { type: 'heatmap'; metric?: Metric }
   | { type: 'trend'; metric: Metric }
