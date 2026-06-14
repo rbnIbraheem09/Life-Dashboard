@@ -48,6 +48,15 @@ describe('isGoalHit', () => {
   })
 })
 
+describe('dayValue', () => {
+  it('returns 0 for undefined day', () => {
+    expect(dayValue(undefined, { field: 'reps', agg: 'sum' })).toBe(0)
+  })
+  it('aggregates a defined day', () => {
+    expect(dayValue({ entries: [e(10), e(5)] }, { field: 'reps', agg: 'sum' })).toBe(15)
+  })
+})
+
 describe('progressPct', () => {
   it('clamps atLeast to 0..1', () => {
     expect(progressPct(50, { kind: 'atLeast', value: 100 })).toBe(0.5)
