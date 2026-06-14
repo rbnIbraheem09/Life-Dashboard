@@ -4,6 +4,7 @@ import { usePages } from '../store/pages'
 import { aggregate } from '../lib/metrics'
 import { ScrollArea } from './ScrollArea'
 import { EntryList } from '../blocks/EntryList'
+import { DailyRecord } from '../blocks/DailyRecord'
 import { cn } from '../lib/cn'
 import type { Entry } from '../types'
 
@@ -34,6 +35,7 @@ export function DayDrawer({
   const total = def ? aggregate(day.entries, def.primaryMetric) : 0
   const count = day.entries.length
   const unit = def?.fields.find((f) => f.key === def.primaryMetric.field)?.unit ?? ''
+  const isDailyRecord = def?.blocks.some((b) => b.type === 'dailyRecord') ?? false
 
   useEffect(() => {
     if (!open) return
@@ -86,7 +88,12 @@ export function DayDrawer({
               {total} {unit} · {count} {count === 1 ? 'entry' : 'entries'}
             </p>
             <div className="mt-6">
-              {displayDate && <EntryList pageId={pageId} date={displayDate} />}
+              {displayDate &&
+                (isDailyRecord ? (
+                  <DailyRecord pageId={pageId} date={displayDate} bare />
+                ) : (
+                  <EntryList pageId={pageId} date={displayDate} />
+                ))}
             </div>
           </div>
         </ScrollArea>

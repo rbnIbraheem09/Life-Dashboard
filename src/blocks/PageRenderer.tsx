@@ -1,6 +1,7 @@
 import { usePages } from '../store/pages'
 import { HeroCounter } from './HeroCounter'
 import { EntryLog } from './EntryLog'
+import { DailyRecord } from './DailyRecord'
 import { StatRow } from './StatRow'
 import { ActivityHeatmap } from './ActivityHeatmap'
 import { TrendChart } from './TrendChart'
@@ -17,6 +18,7 @@ export function PageRenderer({ pageId }: { pageId: string }) {
     <div className="max-w-[1180px] mx-auto px-9 py-9 flex flex-col gap-6">
       {has('hero') && <HeroCounter pageId={pageId} />}
       {has('entryLog') && <EntryLog pageId={pageId} />}
+      {has('dailyRecord') && <DailyRecord pageId={pageId} />}
       {(has('statRow') || has('heatmap')) && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {has('statRow') && <StatRow pageId={pageId} />}
