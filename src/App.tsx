@@ -122,10 +122,7 @@ export default function App() {
                   path="/sleep"
                   element={<ComingSoon challenge="sleep" />}
                 />
-                <Route
-                  path="/reading"
-                  element={<ComingSoon challenge="reading" />}
-                />
+                <Route path="/reading" element={<PageRenderer pageId="reading" />} />
                 <Route path="*" element={<Navigate to="/pullups" replace />} />
               </Routes>
             </div>
