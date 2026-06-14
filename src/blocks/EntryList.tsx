@@ -5,7 +5,9 @@ import { usePages } from '../store/pages'
 import { todayKey } from '../lib/date'
 import { SPRING } from '../motion/springs'
 import { AnimatedNumber } from '../motion/AnimatedNumber'
-import type { Entry, FieldDef } from '../types'
+import type { Entry, FieldDef, FieldValue } from '../types'
+import { formatDuration } from '../lib/duration'
+import { DurationInput } from '../components/DurationInput'
 
 const EMPTY: Entry[] = []
 
@@ -43,6 +45,7 @@ export function EntryList({ pageId, date, focusHotkey = false }: Props) {
   const unit = primary?.unit ?? ''
 
   const [value, setValue] = useState<number>(Number(primary?.default ?? step))
+  const [extra, setExtra] = useState<Record<string, number>>({})
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -62,11 +65,30 @@ export function EntryList({ pageId, date, focusHotkey = false }: Props) {
   if (!def || !primary) return null
   const pk = primary.key
 
+  const secondaryFields = def.fields.filter((f) => f.key !== pk)
+
+  function secondaryText(entry: Entry): string {
+    return secondaryFields
+      .map((f) => {
+        const v = entry.fields[f.key]
+        if (typeof v !== 'number' || v <= 0) return null
+        return f.type === 'duration' ? formatDuration(v, f.unit ?? 'min') : `${v} ${f.unit ?? ''}`.trim()
+      })
+      .filter(Boolean)
+      .join(' · ')
+  }
+
   function handleAdd(e: React.FormEvent) {
     e.preventDefault()
     const n = Math.floor(value)
     if (!Number.isFinite(n) || n <= 0) return
-    addEntry(pageId, day, { [pk]: n })
+    const fields: Record<string, FieldValue> = { [pk]: n }
+    for (const f of secondaryFields) {
+      const v = extra[f.key]
+      if (typeof v === 'number' && v > 0) fields[f.key] = v
+    }
+    addEntry(pageId, day, fields)
+    setExtra({})
   }
 
   function bump(entry: Entry, delta: number) {
@@ -109,8 +131,8 @@ export function EntryList({ pageId, date, focusHotkey = false }: Props) {
                   />
                   <span className="iz-label">{unit}</span>
                 </span>
-                <span className="iz-mono text-[11px] text-[var(--text-muted)]">
-                  {formatTime(entry.at)}
+                <span className="iz-mono text-[11px] text-[var(--text-muted)] truncate">
+                  {[secondaryText(entry), formatTime(entry.at)].filter(Boolean).join('  ·  ')}
                 </span>
                 <div className="flex items-center gap-1.5">
                   <button
@@ -156,6 +178,28 @@ export function EntryList({ pageId, date, focusHotkey = false }: Props) {
           className="iz-mono text-[14px] w-20 px-3 py-2 rounded-md bg-white/[0.03] border border-[var(--border)] text-[var(--text)] focus:border-[var(--border-active)] focus:outline-none tabular-nums"
         />
         <span className="iz-label">{unit}</span>
+        {secondaryFields.map((f) => (
+          <span key={f.key} className="flex items-center gap-1.5">
+            <span className="iz-label">{f.label}</span>
+            {f.type === 'duration' ? (
+              <DurationInput
+                value={extra[f.key] ?? 0}
+                unit={f.unit ?? 'min'}
+                step={f.step ?? 1}
+                onChange={(v) => setExtra((s) => ({ ...s, [f.key]: v }))}
+              />
+            ) : (
+              <input
+                type="number"
+                min={0}
+                step={f.step ?? 1}
+                value={extra[f.key] ?? 0}
+                onChange={(e) => setExtra((s) => ({ ...s, [f.key]: Number(e.target.value) }))}
+                className="iz-mono text-[14px] w-20 px-3 py-2 rounded-md bg-white/[0.03] border border-[var(--border)] text-[var(--text)] focus:border-[var(--border-active)] focus:outline-none tabular-nums"
+              />
+            )}
+          </span>
+        ))}
         <button
           type="submit"
           className="ml-auto text-[13px] font-medium px-4 py-2 rounded-md bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition-opacity duration-[var(--motion-fast)] cursor-pointer"
