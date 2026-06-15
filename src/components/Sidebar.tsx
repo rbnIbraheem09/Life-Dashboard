@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { usePages } from '../store/pages'
 import { ScrollArea } from './ScrollArea'
 import { cn } from '../lib/cn'
+import { parsePageFile } from '../lib/pagefile'
+import { ImportPageDialog } from './ImportPageDialog'
+import type { PageDef } from '../types'
 
 /* ── Builtin page icons (16×16, 1.5px stroke, currentColor) ── */
 
@@ -83,11 +86,75 @@ function PageIcon({ id, iconPath, emoji }: { id: string; iconPath?: string; emoj
   return <span className="inline-block w-[6px] h-[6px] rounded-full bg-[var(--text-muted)]" />
 }
 
+function slugName(name: string): string {
+  return name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'page'
+}
+
 export function Sidebar() {
   const fileRef = useRef<HTMLInputElement>(null)
   const order = usePages((s) => s.data.order)
   const pages = usePages((s) => s.data.pages)
   const deletePage = usePages((s) => s.deletePage)
+  const addPage = usePages((s) => s.addPage)
+  const updatePageDef = usePages((s) => s.updatePageDef)
+  const findByTemplate = usePages((s) => s.findByTemplate)
+  const exportPage = usePages((s) => s.exportPage)
+  const navigate = useNavigate()
+  const pageFileRef = useRef<HTMLInputElement>(null)
+  const [pending, setPending] = useState<{ def: PageDef; existingId: string } | null>(null)
+
+  function download(filename: string, text: string) {
+    const blob = new Blob([text], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function handleExportPage(id: string, name: string) {
+    setMenuFor(null)
+    const json = exportPage(id)
+    if (json) download(`${slugName(name)}.lifepage.json`, json)
+  }
+
+  function handleImportPageFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = parsePageFile(String(reader.result ?? ''))
+      if (!result.ok) {
+        // eslint-disable-next-line no-alert
+        window.alert(`Import failed: ${result.reason}.`)
+        return
+      }
+      const existingId = findByTemplate(result.def.templateId)
+      if (existingId) {
+        setPending({ def: result.def, existingId })
+      } else {
+        const id = addPage(result.def)
+        navigate(`/p/${id}`)
+      }
+    }
+    reader.readAsText(file)
+  }
+
+  function confirmUpdate() {
+    if (!pending) return
+    updatePageDef(pending.existingId, pending.def)
+    navigate(`/p/${pending.existingId}`)
+    setPending(null)
+  }
+
+  function confirmAddCopy() {
+    if (!pending) return
+    const id = addPage({ ...pending.def, templateId: crypto.randomUUID() })
+    navigate(`/p/${id}`)
+    setPending(null)
+  }
 
   // which row's ⋯ menu is open
   const [menuFor, setMenuFor] = useState<string | null>(null)
@@ -160,7 +227,22 @@ export function Sidebar() {
           <div className="flex items-center gap-2 px-2 mb-2">
             <span className="iz-label">Pages</span>
             <div className="flex-1 h-px bg-[var(--border)]" />
+            <button
+              type="button"
+              onClick={() => pageFileRef.current?.click()}
+              title="Import a page"
+              className="iz-mono text-[13px] w-5 h-5 -mr-1 rounded text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-white/[0.05] transition-colors duration-[var(--motion-fast)] inline-flex items-center justify-center"
+            >
+              +
+            </button>
           </div>
+          <input
+            ref={pageFileRef}
+            type="file"
+            accept="application/json,.json"
+            onChange={handleImportPageFile}
+            className="hidden"
+          />
           <nav className="flex flex-col gap-0.5">
             {order.map((id) => {
               const page = pages[id]
@@ -214,6 +296,13 @@ export function Sidebar() {
                         'shadow-[0_8px_24px_-8px_rgba(0,0,0,0.5)]',
                       )}
                     >
+                      <button
+                        type="button"
+                        onClick={() => handleExportPage(id, def.name)}
+                        className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-white/[0.04] transition-colors duration-[var(--motion-fast)]"
+                      >
+                        Export page
+                      </button>
                       <button
                         type="button"
                         onClick={() => handleDelete(id, def.name)}
@@ -279,6 +368,15 @@ export function Sidebar() {
           className="hidden"
         />
       </div>
+      <ImportPageDialog
+        open={pending !== null}
+        name={pending?.def.name ?? ''}
+        localVersion={pending ? (pages[pending.existingId]?.def.version ?? 1) : 1}
+        fileVersion={pending?.def.version ?? 1}
+        onUpdate={confirmUpdate}
+        onAddCopy={confirmAddCopy}
+        onCancel={() => setPending(null)}
+      />
     </div>
   )
 }
