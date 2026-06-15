@@ -90,7 +90,15 @@ export function DayDrawer({
             <p className="iz-mono text-[11px] text-[var(--text-muted)] mt-1">
               {totalLabel} · {count} {count === 1 ? 'entry' : 'entries'}
             </p>
-            <div className="mt-6">
+            {/* key={displayDate} remounts the logger per day. Without it, the
+                drawer is a long-lived instance (displayDate is retained through
+                the slide-out so content never blanks), so switching days makes
+                framer-motion animate the diff between two unrelated days — every
+                prior row plays its exit (height→0) while the new rows enter,
+                producing the "tall list folds into the short one" jank. A fresh
+                mount + AnimatePresence initial={false} swaps content instantly;
+                within-day add/remove still animates (the key is unchanged). */}
+            <div className="mt-6" key={displayDate ?? ''}>
               {displayDate &&
                 (isDailyRecord ? (
                   <DailyRecord pageId={pageId} date={displayDate} bare />
