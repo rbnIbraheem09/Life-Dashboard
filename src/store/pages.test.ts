@@ -49,3 +49,17 @@ describe('importData', () => {
     for (const id of BUILTIN_ORDER) expect(pages[id]).toBeDefined()
   })
 })
+
+describe('deletePage', () => {
+  it('removes a page from pages + order, and records a deleted builtin in dismissed', () => {
+    // start from a clean known state
+    usePages.getState().resetAll()
+    expect(usePages.getState().data.pages.water).toBeDefined()
+
+    usePages.getState().deletePage('water')
+    const after = usePages.getState().data
+    expect(after.pages.water).toBeUndefined()
+    expect(after.order).not.toContain('water')
+    expect(after.dismissed).toContain('water')
+  })
+})

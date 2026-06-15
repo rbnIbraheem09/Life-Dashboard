@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { Entry, FieldValue, StorageV2 } from '../types'
 import { emptyStorage, flushStorage, isValidV2, loadStorage, normalizeStore, saveStorage } from '../lib/storage'
+import { BUILTIN_DEFS } from '../registry/builtins'
 
 type PagesState = {
   data: StorageV2
@@ -11,6 +12,7 @@ type PagesState = {
   /** Returns true on a successful import, false if the JSON is missing/invalid. */
   importData: (json: string) => boolean
   resetAll: () => void
+  deletePage: (localId: string) => void
 }
 
 /** Replace one day's data immutably, dropping the day if it ends up empty, then persist. */
@@ -84,4 +86,20 @@ export const usePages = create<PagesState>((set, get) => ({
     flushStorage(data)
     set({ data })
   },
+
+  deletePage: (localId) =>
+    set((state) => {
+      if (!(localId in state.data.pages)) return { data: state.data }
+      const pages = { ...state.data.pages }
+      delete pages[localId]
+      const order = state.data.order.filter((id) => id !== localId)
+      const isBuiltin = localId in BUILTIN_DEFS
+      const dismissed =
+        isBuiltin && !state.data.dismissed.includes(localId)
+          ? [...state.data.dismissed, localId]
+          : state.data.dismissed
+      const data: StorageV2 = { ...state.data, pages, order, dismissed }
+      saveStorage(data)
+      return { data }
+    }),
 }))
