@@ -84,13 +84,15 @@ export function Sidebar() {
     const reader = new FileReader()
     reader.onload = () => {
       const text = String(reader.result ?? '')
-      try {
-        const parsed = JSON.parse(text)
-        if (parsed?.version !== 2 || typeof parsed.pages !== 'object') {
-          throw new Error('Unrecognized schema')
-        }
-        usePages.getState().importData(text)
-      } catch {
+      // Import replaces everything — guard the one-click, no-undo overwrite.
+      // eslint-disable-next-line no-alert
+      if (!window.confirm('Import replaces ALL current data with the contents of this file. Continue?')) {
+        return
+      }
+      // importData is the single validator (isValidV2); it returns false for
+      // anything malformed or non-v2, so failures are never silent.
+      const ok = usePages.getState().importData(text)
+      if (!ok) {
         // eslint-disable-next-line no-alert
         window.alert('Import failed: not a valid Life-Dashboard backup file.')
       }

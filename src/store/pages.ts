@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { Entry, FieldValue, StorageV2 } from '../types'
-import { emptyStorage, flushStorage, isValidV2, loadStorage, saveStorage } from '../lib/storage'
+import { emptyStorage, flushStorage, isValidV2, loadStorage, mergeMissingBuiltins, saveStorage } from '../lib/storage'
 
 type PagesState = {
   data: StorageV2
@@ -8,7 +8,8 @@ type PagesState = {
   updateEntry: (pageId: string, date: string, entryId: string, fields: Record<string, FieldValue>) => void
   deleteEntry: (pageId: string, date: string, entryId: string) => void
   exportData: () => string
-  importData: (json: string) => void
+  /** Returns true on a successful import, false if the JSON is missing/invalid. */
+  importData: (json: string) => boolean
   resetAll: () => void
 }
 
@@ -65,12 +66,16 @@ export const usePages = create<PagesState>((set, get) => ({
   importData: (json) => {
     try {
       const parsed = JSON.parse(json)
-      if (isValidV2(parsed)) {
-        flushStorage(parsed)
-        set({ data: parsed })
-      }
+      if (!isValidV2(parsed)) return false
+      // Same merge the load path uses: an older backup may predate newer
+      // builtin pages (e.g. sleep/reading), and without this they'd be dropped
+      // — their sidebar links would then render a blank page.
+      const merged = mergeMissingBuiltins(parsed).store
+      flushStorage(merged)
+      set({ data: merged })
+      return true
     } catch {
-      // ignore malformed import
+      return false
     }
   },
 
