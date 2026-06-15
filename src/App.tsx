@@ -5,7 +5,7 @@ import { WindowChrome } from './components/WindowChrome'
 import { AuroraLayer } from './components/AuroraLayer'
 import { ScrollArea } from './components/ScrollArea'
 import { HelpOverlay } from './components/HelpOverlay'
-import { PageRenderer } from './blocks/PageRenderer'
+import { PageRoute } from './components/PageRoute'
 import SettingsPage from './pages/SettingsPage'
 import { useWindowDrag } from './hooks/useWindowDrag'
 import { useUi } from './store/ui'
@@ -113,13 +113,14 @@ export default function App() {
           >
             <div className="my-auto w-full">
               <Routes>
-                <Route path="/" element={<Navigate to="/pullups" replace />} />
-                <Route path="/pullups" element={<PageRenderer pageId="pullups" />} />
-                <Route path="/water" element={<PageRenderer pageId="water" />} />
+                <Route path="/" element={<PageRoute />} />
+                <Route path="/p/:pageId" element={<PageRoute />} />
                 <Route path="/settings" element={<SettingsPage />} />
-                <Route path="/sleep" element={<PageRenderer pageId="sleep" />} />
-                <Route path="/reading" element={<PageRenderer pageId="reading" />} />
-                <Route path="*" element={<Navigate to="/pullups" replace />} />
+                <Route path="/pullups" element={<Navigate to="/p/pullups" replace />} />
+                <Route path="/water" element={<Navigate to="/p/water" replace />} />
+                <Route path="/sleep" element={<Navigate to="/p/sleep" replace />} />
+                <Route path="/reading" element={<Navigate to="/p/reading" replace />} />
+                <Route path="*" element={<PageRoute />} />
               </Routes>
             </div>
           </ScrollArea>
