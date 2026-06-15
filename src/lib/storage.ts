@@ -41,13 +41,52 @@ function isValidV1(data: unknown): data is V1Storage {
  * object reference when nothing is missing.
  */
 export function mergeMissingBuiltins(store: StorageV2): { store: StorageV2; added: boolean } {
-  const missing = BUILTIN_ORDER.filter((id) => !(id in store.pages))
+  const dismissed = store.dismissed ?? []
+  const missing = BUILTIN_ORDER.filter((id) => !(id in store.pages) && !dismissed.includes(id))
   if (missing.length === 0) return { store, added: false }
 
   const pages = { ...store.pages }
   for (const id of missing) pages[id] = { def: BUILTIN_DEFS[id], data: { days: {} } }
   const order = [...store.order, ...missing.filter((id) => !store.order.includes(id))]
   return { store: { ...store, pages, order }, added: true }
+}
+
+/**
+ * Bring any store entering the app to current shape: merge missing builtins
+ * (respecting `dismissed`), ensure `dismissed` exists, and backfill identity
+ * (templateId/version) onto pages saved before those fields existed. Used by
+ * both loadStorage and the whole-store import. Returns the same reference when
+ * nothing changed.
+ */
+export function normalizeStore(input: StorageV2): { store: StorageV2; changed: boolean } {
+  const merged = mergeMissingBuiltins(input)
+  let store = merged.store
+  let changed = merged.added
+
+  if (!Array.isArray(store.dismissed)) {
+    store = { ...store, dismissed: [] }
+    changed = true
+  }
+
+  let pagesChanged = false
+  const pages: StorageV2['pages'] = { ...store.pages }
+  for (const [id, page] of Object.entries(pages)) {
+    const def = page.def as { templateId?: unknown; version?: unknown }
+    const hasId = typeof def.templateId === 'string'
+    const hasVer = typeof def.version === 'number'
+    if (hasId && hasVer) continue
+    const builtin = BUILTIN_DEFS[id]
+    const templateId = hasId ? (def.templateId as string) : builtin?.templateId ?? crypto.randomUUID()
+    const version = hasVer ? (def.version as number) : builtin?.version ?? 1
+    pages[id] = { ...page, def: { ...page.def, templateId, version } }
+    pagesChanged = true
+  }
+  if (pagesChanged) {
+    store = { ...store, pages }
+    changed = true
+  }
+
+  return { store, changed }
 }
 
 /**
@@ -62,8 +101,8 @@ export function loadStorage(): StorageV2 {
     if (rawV2) {
       const parsed = JSON.parse(rawV2)
       if (isValidV2(parsed)) {
-        const { store, added } = mergeMissingBuiltins(parsed)
-        if (added) flushStorage(store)
+        const { store, changed } = normalizeStore(parsed)
+        if (changed) flushStorage(store)
         return store
       }
     }
@@ -71,7 +110,7 @@ export function loadStorage(): StorageV2 {
     if (rawV1) {
       const parsed = JSON.parse(rawV1)
       if (isValidV1(parsed)) {
-        const migrated = mergeMissingBuiltins(migrateV1toV2(parsed)).store
+        const migrated = normalizeStore(migrateV1toV2(parsed)).store
         flushStorage(migrated) // persist immediately so the migration is durable
         return migrated
       }

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { Entry, FieldValue, StorageV2 } from '../types'
-import { emptyStorage, flushStorage, isValidV2, loadStorage, mergeMissingBuiltins, saveStorage } from '../lib/storage'
+import { emptyStorage, flushStorage, isValidV2, loadStorage, normalizeStore, saveStorage } from '../lib/storage'
 
 type PagesState = {
   data: StorageV2
@@ -70,7 +70,7 @@ export const usePages = create<PagesState>((set, get) => ({
       // Same merge the load path uses: an older backup may predate newer
       // builtin pages (e.g. sleep/reading), and without this they'd be dropped
       // — their sidebar links would then render a blank page.
-      const merged = mergeMissingBuiltins(parsed).store
+      const merged = normalizeStore(parsed).store
       flushStorage(merged)
       set({ data: merged })
       return true

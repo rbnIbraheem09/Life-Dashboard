@@ -1,6 +1,6 @@
 // src/lib/storage.test.ts
 import { describe, it, expect } from 'vitest'
-import { mergeMissingBuiltins } from './storage'
+import { mergeMissingBuiltins, normalizeStore } from './storage'
 import { BUILTIN_DEFS, BUILTIN_ORDER } from '../registry/builtins'
 import type { StorageV2 } from '../types'
 
@@ -42,5 +42,46 @@ describe('mergeMissingBuiltins', () => {
     const { store: merged, added } = mergeMissingBuiltins(store)
     expect(added).toBe(false)
     expect(merged).toBe(store)
+  })
+})
+
+describe('normalizeStore', () => {
+  it('backfills templateId/version on a builtin page missing them', () => {
+    const store = {
+      version: 2 as const,
+      pages: { pullups: { def: { ...BUILTIN_DEFS.pullups, templateId: undefined, version: undefined } as never, data: { days: {} } } },
+      order: ['pullups'],
+      dismissed: [],
+    }
+    const { store: out, changed } = normalizeStore(store)
+    expect(changed).toBe(true)
+    expect(out.pages.pullups.def.templateId).toBe('builtin:pullups')
+    expect(out.pages.pullups.def.version).toBe(1)
+  })
+
+  it('adds a dismissed array when missing', () => {
+    const store = { version: 2 as const, pages: {}, order: [] } as never
+    const { store: out } = normalizeStore(store)
+    expect(Array.isArray(out.dismissed)).toBe(true)
+  })
+
+  it('does not resurrect a dismissed builtin', () => {
+    const store = {
+      version: 2 as const,
+      pages: { pullups: { def: BUILTIN_DEFS.pullups, data: { days: {} } } },
+      order: ['pullups'],
+      dismissed: ['water'],
+    }
+    const { store: out } = normalizeStore(store)
+    expect(out.pages.water).toBeUndefined()
+  })
+
+  it('is unchanged for an already-normal store', () => {
+    const { store: normal } = normalizeStore({
+      version: 2, pages: {}, order: [], dismissed: [],
+    } as never)
+    const again = normalizeStore(normal)
+    expect(again.changed).toBe(false)
+    expect(again.store).toBe(normal)
   })
 })
