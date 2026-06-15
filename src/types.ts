@@ -39,9 +39,12 @@ export type BlockDef =
 
 export type PageDef = {
   schemaVersion: 1       // PageDef format version (for future export compat)
-  id: string
+  id: string             // LOCAL store key — unique within this store; the route + sidebar key
+  templateId: string     // STABLE lineage id — shared across copies/versions; what import matches on
+  version: number        // template version — informational + update-hint gate
   name: string
   emoji?: string
+  iconPath?: string      // optional SVG path `d` string, rendered inside our own <svg>
   fields: FieldDef[]
   primaryMetric: Metric
   target: Target
@@ -54,6 +57,7 @@ export type StorageV2 = {
   version: 2
   pages: Record<string, PageState>
   order: string[]        // page id order (sidebar)
+  dismissed: string[]    // builtin ids the user deleted — the merge skips these
 }
 
 export type Stats = {

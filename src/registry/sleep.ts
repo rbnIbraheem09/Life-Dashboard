@@ -3,6 +3,8 @@ import type { PageDef } from '../types'
 export const SLEEP_DEF: PageDef = {
   schemaVersion: 1,
   id: 'sleep',
+  templateId: 'builtin:sleep',
+  version: 1,
   name: 'Sleep',
   emoji: '🌙',
   fields: [

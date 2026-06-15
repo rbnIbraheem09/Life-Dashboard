@@ -12,7 +12,7 @@ export function emptyStorage(): StorageV2 {
   for (const id of BUILTIN_ORDER) {
     pages[id] = { def: BUILTIN_DEFS[id], data: { days: {} } }
   }
-  return { version: 2, pages, order: [...BUILTIN_ORDER] }
+  return { version: 2, pages, order: [...BUILTIN_ORDER], dismissed: [] }
 }
 
 export function isValidV2(data: unknown): data is StorageV2 {

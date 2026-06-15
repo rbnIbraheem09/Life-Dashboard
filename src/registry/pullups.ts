@@ -3,6 +3,8 @@ import type { PageDef } from '../types'
 export const PULLUPS_DEF: PageDef = {
   schemaVersion: 1,
   id: 'pullups',
+  templateId: 'builtin:pullups',
+  version: 1,
   name: 'Pullup Challenge',
   emoji: '💪',
   fields: [{ key: 'reps', type: 'count', label: 'Reps', unit: 'reps', step: 1, default: 10 }],

@@ -21,5 +21,6 @@ export function migrateV1toV2(v1: V1Storage): StorageV2 {
       water: { def: WATER_DEF, data: { days: {} } },
     },
     order: ['pullups', 'water'],
+    dismissed: [],
   }
 }

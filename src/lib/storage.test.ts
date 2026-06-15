@@ -10,6 +10,7 @@ describe('mergeMissingBuiltins', () => {
       version: 2,
       pages: { pullups: { def: BUILTIN_DEFS.pullups, data: { days: {} } } },
       order: ['pullups'],
+      dismissed: [],
     }
     const { store: merged, added } = mergeMissingBuiltins(store)
     expect(added).toBe(true)
@@ -26,6 +27,7 @@ describe('mergeMissingBuiltins', () => {
         pullups: { def: customDef, data: { days: { '2026-06-01': { entries: [{ id: 'a', at: '', fields: { reps: 10 } }] } } } },
       },
       order: ['pullups'],
+      dismissed: [],
     }
     const { store: merged } = mergeMissingBuiltins(store)
     expect(merged.pages.pullups.def.name).toBe('My Pullups')
@@ -36,7 +38,7 @@ describe('mergeMissingBuiltins', () => {
     const pages = Object.fromEntries(
       BUILTIN_ORDER.map((id) => [id, { def: BUILTIN_DEFS[id], data: { days: {} } }])
     )
-    const store: StorageV2 = { version: 2, pages, order: [...BUILTIN_ORDER] }
+    const store: StorageV2 = { version: 2, pages, order: [...BUILTIN_ORDER], dismissed: [] }
     const { store: merged, added } = mergeMissingBuiltins(store)
     expect(added).toBe(false)
     expect(merged).toBe(store)

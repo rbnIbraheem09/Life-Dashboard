@@ -12,6 +12,8 @@ function oldBackup(): string {
         def: {
           schemaVersion: 1,
           id: 'pullups',
+          templateId: 'builtin:pullups',
+          version: 1,
           name: 'Pullup Challenge',
           fields: [{ key: 'reps', type: 'count', label: 'Reps', unit: 'reps' }],
           primaryMetric: { field: 'reps', agg: 'sum' },
@@ -22,6 +24,7 @@ function oldBackup(): string {
       },
     },
     order: ['pullups'],
+    dismissed: [],
   }
   return JSON.stringify(store)
 }

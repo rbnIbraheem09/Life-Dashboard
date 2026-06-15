@@ -3,6 +3,8 @@ import type { PageDef } from '../types'
 export const READING_DEF: PageDef = {
   schemaVersion: 1,
   id: 'reading',
+  templateId: 'builtin:reading',
+  version: 1,
   name: 'Reading',
   emoji: '📖',
   fields: [
