@@ -46,11 +46,16 @@ function goalOf(target: Target): number {
   return target.kind === 'range' ? target.max : target.value
 }
 
+// Activity intensity ladder. Accent alpha MUST go through color-mix() —
+// a Tailwind opacity modifier on a var() (e.g. `bg-[var(--accent-1)]/45`)
+// emits NO rule, because --accent-1 is a hex, not rgb channels, so the
+// cell renders transparent. color-mix is the sanctioned form (CLAUDE.md
+// hard-rule 1) and compiles to a real background-color.
 const LEVEL_CLASSES: Record<0 | 1 | 2 | 3 | 4, string> = {
   0: 'bg-white/[0.04]',
-  1: 'bg-[var(--accent-1)]/20',
-  2: 'bg-[var(--accent-1)]/45',
-  3: 'bg-[var(--accent-1)]/70',
+  1: 'bg-[color-mix(in_srgb,var(--accent-1)_22%,transparent)]',
+  2: 'bg-[color-mix(in_srgb,var(--accent-1)_48%,transparent)]',
+  3: 'bg-[color-mix(in_srgb,var(--accent-1)_72%,transparent)]',
   4: 'bg-[var(--accent-1)]',
 }
 

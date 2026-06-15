@@ -119,7 +119,7 @@ export function EntryList({ pageId, date, focusHotkey = false }: Props) {
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={reduce ? { opacity: 0 } : { opacity: 0, height: 0 }}
                 transition={SPRING.smooth}
-                className="grid grid-cols-[auto_auto_1fr_auto] items-center gap-4 rounded-[10px] bg-white/[0.02] border border-[var(--border)] px-4 py-2.5 hover:border-[var(--border-active)] hover:bg-[var(--accent-1)]/[0.03] transition-colors duration-[var(--motion-mid)]"
+                className="grid grid-cols-[auto_auto_1fr_auto] items-center gap-4 rounded-[10px] bg-white/[0.02] border border-[var(--border)] px-4 py-2.5 hover:border-[var(--border-active)] hover:bg-[color-mix(in_srgb,var(--accent-1)_4%,transparent)] transition-colors duration-[var(--motion-mid)]"
               >
                 <span className="iz-mono text-[11px] text-[var(--text-muted)] w-5">
                   {String(i + 1).padStart(2, '0')}
@@ -147,7 +147,7 @@ export function EntryList({ pageId, date, focusHotkey = false }: Props) {
                     type="button"
                     onClick={() => bump(entry, step)}
                     title="Increase"
-                    className="iz-mono text-[13px] w-8 py-1 rounded-md text-[var(--accent-1)] border border-[var(--border-active)] hover:bg-[var(--accent-1)]/[0.08] transition-colors duration-[var(--motion-fast)]"
+                    className="iz-mono text-[13px] w-8 py-1 rounded-md text-[var(--accent-1)] border border-[var(--border-active)] hover:bg-[color-mix(in_srgb,var(--accent-1)_10%,transparent)] transition-colors duration-[var(--motion-fast)]"
                   >
                     +
                   </button>

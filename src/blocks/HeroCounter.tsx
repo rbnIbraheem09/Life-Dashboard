@@ -82,7 +82,7 @@ export function HeroCounter({ pageId }: { pageId: string }) {
       <p className="iz-mono text-[12px] text-[var(--text-dim)] mt-4">{subline}</p>
 
       <div className="mt-5 flex items-center gap-3">
-        <div className="flex-1 h-1 rounded-full bg-[var(--accent-1)]/[0.08] overflow-hidden">
+        <div className="flex-1 h-1 rounded-full bg-[color-mix(in_srgb,var(--accent-1)_10%,transparent)] overflow-hidden">
           <AnimatedBar pct={pct} className="h-full rounded-full bg-[var(--accent-1)]" />
         </div>
         <span className="iz-mono text-[11px] text-[var(--text-muted)] tabular-nums w-10 text-right">
