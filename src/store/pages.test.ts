@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { usePages } from './pages'
 import { BUILTIN_ORDER } from '../registry/builtins'
-import type { StorageV2 } from '../types'
+import type { StorageV2, PageDef } from '../types'
+import { serializePage } from '../lib/pagefile'
 
 // A backup exported before sleep/reading existed: only pullups, with data.
 function oldBackup(): string {
@@ -61,5 +62,57 @@ describe('deletePage', () => {
     expect(after.pages.water).toBeUndefined()
     expect(after.order).not.toContain('water')
     expect(after.dismissed).toContain('water')
+  })
+})
+
+const sampleDef: PageDef = {
+  schemaVersion: 1, id: 'ignored', templateId: 'tmpl-abc', version: 1,
+  name: 'Cold Plunge', emoji: '🧊',
+  fields: [{ key: 'mins', type: 'duration', label: 'Minutes', unit: 'min' }],
+  primaryMetric: { field: 'mins', agg: 'sum' },
+  target: { kind: 'atLeast', value: 3 },
+  blocks: [{ type: 'hero' }, { type: 'entryLog' }],
+}
+
+describe('addPage / findByTemplate / updatePageDef / exportPage', () => {
+  it('addPage mints a unique local id from the name and appends to order', () => {
+    usePages.getState().resetAll()
+    const id = usePages.getState().addPage(sampleDef)
+    expect(id).toBe('cold-plunge')
+    const data = usePages.getState().data
+    expect(data.pages[id]).toBeDefined()
+    expect(data.pages[id].def.id).toBe(id)        // local id stamped onto the def
+    expect(data.pages[id].def.templateId).toBe('tmpl-abc')
+    expect(data.order).toContain(id)
+  })
+
+  it('addPage avoids id collisions with a suffix', () => {
+    const id2 = usePages.getState().addPage(sampleDef)
+    expect(id2).toBe('cold-plunge-2')
+  })
+
+  it('findByTemplate locates a page by templateId', () => {
+    expect(usePages.getState().findByTemplate('tmpl-abc')).toBeDefined()
+    expect(usePages.getState().findByTemplate('nope')).toBeUndefined()
+  })
+
+  it('updatePageDef swaps the def but keeps logged data', () => {
+    usePages.getState().resetAll()
+    const id = usePages.getState().addPage(sampleDef)
+    usePages.getState().addEntry(id, '2026-06-01', { mins: 5 })
+    usePages.getState().updatePageDef(id, { ...sampleDef, name: 'Ice Bath' })
+    const page = usePages.getState().data.pages[id]
+    expect(page.def.name).toBe('Ice Bath')
+    expect(page.def.id).toBe(id)                  // local id preserved
+    expect(page.data.days['2026-06-01'].entries).toHaveLength(1)
+  })
+
+  it('exportPage round-trips through serialize (def only, no data)', () => {
+    usePages.getState().resetAll()
+    const id = usePages.getState().addPage(sampleDef)
+    usePages.getState().addEntry(id, '2026-06-01', { mins: 5 })
+    const json = usePages.getState().exportPage(id)
+    expect(json).toBe(serializePage(usePages.getState().data.pages[id].def))
+    expect('data' in JSON.parse(json)).toBe(false)
   })
 })
