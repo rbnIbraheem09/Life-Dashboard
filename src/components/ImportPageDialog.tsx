@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '../lib/cn'
 
 /**
@@ -33,7 +34,11 @@ export function ImportPageDialog({
     return () => document.removeEventListener('keydown', onKey)
   }, [open, onCancel])
 
-  return (
+  // Portal to <body> so `fixed` is viewport-relative. Mounted inside the
+  // Sidebar, this dialog would otherwise be trapped by the sidebar wrapper's
+  // transform/will-change (which makes it the containing block for fixed
+  // descendants), centering the dialog over the 260px panel instead.
+  return createPortal(
     <>
       <div
         onClick={onCancel}
@@ -94,6 +99,7 @@ export function ImportPageDialog({
           </button>
         </div>
       </div>
-    </>
+    </>,
+    document.body,
   )
 }
