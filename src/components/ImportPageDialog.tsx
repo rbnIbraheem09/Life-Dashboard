@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { cn } from '../lib/cn'
 
 /**
@@ -22,6 +23,16 @@ export function ImportPageDialog({
   onAddCopy: () => void
   onCancel: () => void
 }) {
+  // Esc cancels — matches the DayDrawer's behavior.
+  useEffect(() => {
+    if (!open) return
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onCancel()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [open, onCancel])
+
   return (
     <>
       <div
