@@ -71,14 +71,19 @@ export function normalizeStore(input: StorageV2): { store: StorageV2; changed: b
   let pagesChanged = false
   const pages: StorageV2['pages'] = { ...store.pages }
   for (const [id, page] of Object.entries(pages)) {
-    const def = page.def as { templateId?: unknown; version?: unknown }
-    const hasId = typeof def.templateId === 'string'
-    const hasVer = typeof def.version === 'number'
-    if (hasId && hasVer) continue
+    const def = page.def as { templateId?: unknown; version?: unknown; iconPath?: unknown }
     const builtin = BUILTIN_DEFS[id]
-    const templateId = hasId ? (def.templateId as string) : builtin?.templateId ?? crypto.randomUUID()
-    const version = hasVer ? (def.version as number) : builtin?.version ?? 1
-    pages[id] = { ...page, def: { ...page.def, templateId, version } }
+    const needsId = typeof def.templateId !== 'string'
+    const needsVer = typeof def.version !== 'number'
+    // builtins carry their vector icon as data so it ports with exports/forks;
+    // backfill it onto pages saved before iconPath existed.
+    const needsIcon = !!builtin?.iconPath && typeof def.iconPath !== 'string'
+    if (!needsId && !needsVer && !needsIcon) continue
+    const next = { ...page.def }
+    if (needsId) next.templateId = builtin?.templateId ?? crypto.randomUUID()
+    if (needsVer) next.version = builtin?.version ?? 1
+    if (needsIcon) next.iconPath = builtin!.iconPath
+    pages[id] = { ...page, def: next }
     pagesChanged = true
   }
   if (pagesChanged) {

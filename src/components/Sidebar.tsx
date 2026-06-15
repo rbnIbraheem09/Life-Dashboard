@@ -77,13 +77,24 @@ function PathIcon({ d }: { d: string }) {
   )
 }
 
-/** Icon precedence: iconPath → builtin code-icon → emoji → fallback dot. */
-function PageIcon({ id, iconPath, emoji }: { id: string; iconPath?: string; emoji?: string }) {
+/** Neutral vector glyph for pages with no icon — never an emoji. */
+function FallbackIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"
+      strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+      <rect x="3.5" y="2.5" width="9" height="11" rx="2" />
+      <path d="M6 6h4M6 9h4" />
+    </svg>
+  )
+}
+
+/** Icon precedence: iconPath → builtin code-icon → neutral glyph. Emoji is
+ *  never rendered as an icon (deliberate — vector only). */
+function PageIcon({ id, iconPath }: { id: string; iconPath?: string }) {
   if (iconPath) return <PathIcon d={iconPath} />
   const Builtin = BUILTIN_ICONS[id]
   if (Builtin) return <Builtin />
-  if (emoji) return <span className="text-[14px] leading-none">{emoji}</span>
-  return <span className="inline-block w-[6px] h-[6px] rounded-full bg-[var(--text-muted)]" />
+  return <FallbackIcon />
 }
 
 function slugName(name: string): string {
@@ -156,9 +167,11 @@ export function Sidebar() {
     setPending(null)
   }
 
-  // which row's ⋯ menu is open
+  // which row's ⋯ menu is open, and whether its Delete is armed (2-step confirm)
   const [menuFor, setMenuFor] = useState<string | null>(null)
+  const [armedDelete, setArmedDelete] = useState(false)
   useEffect(() => {
+    setArmedDelete(false) // re-arming required each time a menu opens
     if (!menuFor) return
     const close = () => setMenuFor(null)
     document.addEventListener('click', close)
@@ -196,11 +209,15 @@ export function Sidebar() {
     e.target.value = ''
   }
 
-  function handleDelete(id: string, name: string) {
-    setMenuFor(null)
-    // eslint-disable-next-line no-alert
-    if (window.confirm(`Delete "${name}"? This removes the page and its logged data.`)) {
+  // Two-step inline confirm — first click arms, second deletes. Avoids
+  // window.confirm, which is unreliable in webview runtimes (Tauri/WKWebView).
+  function handleDelete(id: string) {
+    if (armedDelete) {
       deletePage(id)
+      setMenuFor(null)
+      setArmedDelete(false)
+    } else {
+      setArmedDelete(true)
     }
   }
 
@@ -263,7 +280,7 @@ export function Sidebar() {
                     }
                   >
                     <span className="w-4 h-4 shrink-0 flex items-center justify-center">
-                      <PageIcon id={id} iconPath={def.iconPath} emoji={def.emoji} />
+                      <PageIcon id={id} iconPath={def.iconPath} />
                     </span>
                     <span className="truncate">{def.name}</span>
                   </NavLink>
@@ -305,10 +322,15 @@ export function Sidebar() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleDelete(id, def.name)}
-                        className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-white/[0.04] transition-colors duration-[var(--motion-fast)]"
+                        onClick={() => handleDelete(id)}
+                        className={cn(
+                          'w-full text-left px-3 py-1.5 text-[12px] transition-colors duration-[var(--motion-fast)]',
+                          armedDelete
+                            ? 'text-[var(--accent-2)] bg-[color-mix(in_srgb,var(--accent-2)_12%,transparent)]'
+                            : 'text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-white/[0.04]',
+                        )}
                       >
-                        Delete page
+                        {armedDelete ? 'Click again to delete' : 'Delete page'}
                       </button>
                     </div>
                   )}
