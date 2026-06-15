@@ -5,6 +5,7 @@ import { ScrollArea } from './ScrollArea'
 import { cn } from '../lib/cn'
 import { parsePageFile } from '../lib/pagefile'
 import { ImportPageDialog } from './ImportPageDialog'
+import { ConfirmDialog } from './ConfirmDialog'
 import type { PageDef } from '../types'
 
 /* ── Builtin page icons (16×16, 1.5px stroke, currentColor) ── */
@@ -113,6 +114,12 @@ export function Sidebar() {
   const navigate = useNavigate()
   const pageFileRef = useRef<HTMLInputElement>(null)
   const [pending, setPending] = useState<{ def: PageDef; existingId: string } | null>(null)
+  // In-app confirm/notice (replaces window.confirm/alert — unreliable in webviews).
+  const [dialog, setDialog] = useState<
+    | { kind: 'confirmBackup'; text: string }
+    | { kind: 'notice'; message: string }
+    | null
+  >(null)
 
   function download(filename: string, text: string) {
     const blob = new Blob([text], { type: 'application/json' })
@@ -138,8 +145,7 @@ export function Sidebar() {
     reader.onload = () => {
       const result = parsePageFile(String(reader.result ?? ''))
       if (!result.ok) {
-        // eslint-disable-next-line no-alert
-        window.alert(`Import failed: ${result.reason}.`)
+        setDialog({ kind: 'notice', message: `Import failed: ${result.reason}.` })
         return
       }
       const existingId = findByTemplate(result.def.templateId)
@@ -194,19 +200,16 @@ export function Sidebar() {
     if (!file) return
     const reader = new FileReader()
     reader.onload = () => {
-      const text = String(reader.result ?? '')
-      // eslint-disable-next-line no-alert
-      if (!window.confirm('Import replaces ALL current data with the contents of this file. Continue?')) {
-        return
-      }
-      const ok = usePages.getState().importData(text)
-      if (!ok) {
-        // eslint-disable-next-line no-alert
-        window.alert('Import failed: not a valid Life-Dashboard backup file.')
-      }
+      // Defer the destructive overwrite to an in-app confirm dialog.
+      setDialog({ kind: 'confirmBackup', text: String(reader.result ?? '') })
     }
     reader.readAsText(file)
     e.target.value = ''
+  }
+
+  function confirmBackupImport(text: string) {
+    const ok = usePages.getState().importData(text)
+    setDialog(ok ? null : { kind: 'notice', message: 'Import failed: not a valid Life-Dashboard backup file.' })
   }
 
   // Two-step inline confirm — first click arms, second deletes. Avoids
@@ -398,6 +401,23 @@ export function Sidebar() {
         onUpdate={confirmUpdate}
         onAddCopy={confirmAddCopy}
         onCancel={() => setPending(null)}
+      />
+      <ConfirmDialog
+        open={dialog?.kind === 'confirmBackup'}
+        title="Import backup"
+        message="This replaces ALL current pages and data with the contents of this file. It can't be undone."
+        confirmLabel="Replace everything"
+        danger
+        onConfirm={() => {
+          if (dialog?.kind === 'confirmBackup') confirmBackupImport(dialog.text)
+        }}
+        onClose={() => setDialog(null)}
+      />
+      <ConfirmDialog
+        open={dialog?.kind === 'notice'}
+        title="Import failed"
+        message={dialog?.kind === 'notice' ? dialog.message : ''}
+        onClose={() => setDialog(null)}
       />
     </div>
   )
