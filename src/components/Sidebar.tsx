@@ -1,10 +1,10 @@
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { usePages } from '../store/pages'
 import { ScrollArea } from './ScrollArea'
 import { cn } from '../lib/cn'
 
-/* ── Page icons (16×16, 1.5px stroke, currentColor — no icon library) ── */
+/* ── Builtin page icons (16×16, 1.5px stroke, currentColor) ── */
 
 function PullupsIcon() {
   return (
@@ -57,15 +57,46 @@ function GearIcon() {
   )
 }
 
-const BUILT_IN_PAGES = [
-  { id: 'pullups', path: '/pullups', label: 'Pullups', icon: <PullupsIcon /> },
-  { id: 'water', path: '/water', label: 'Water', icon: <WaterIcon /> },
-  { id: 'sleep', path: '/sleep', label: 'Sleep', icon: <SleepIcon /> },
-  { id: 'reading', path: '/reading', label: 'Reading', icon: <ReadingIcon /> },
-] as const
+const BUILTIN_ICONS: Record<string, () => JSX.Element> = {
+  pullups: PullupsIcon,
+  water: WaterIcon,
+  sleep: SleepIcon,
+  reading: ReadingIcon,
+}
+
+/** Custom-page vector icon: a single SVG path rendered inside our own <svg>. */
+function PathIcon({ d }: { d: string }) {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"
+      strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+      <path d={d} />
+    </svg>
+  )
+}
+
+/** Icon precedence: iconPath → builtin code-icon → emoji → fallback dot. */
+function PageIcon({ id, iconPath, emoji }: { id: string; iconPath?: string; emoji?: string }) {
+  if (iconPath) return <PathIcon d={iconPath} />
+  const Builtin = BUILTIN_ICONS[id]
+  if (Builtin) return <Builtin />
+  if (emoji) return <span className="text-[14px] leading-none">{emoji}</span>
+  return <span className="inline-block w-[6px] h-[6px] rounded-full bg-[var(--text-muted)]" />
+}
 
 export function Sidebar() {
   const fileRef = useRef<HTMLInputElement>(null)
+  const order = usePages((s) => s.data.order)
+  const pages = usePages((s) => s.data.pages)
+  const deletePage = usePages((s) => s.deletePage)
+
+  // which row's ⋯ menu is open
+  const [menuFor, setMenuFor] = useState<string | null>(null)
+  useEffect(() => {
+    if (!menuFor) return
+    const close = () => setMenuFor(null)
+    document.addEventListener('click', close)
+    return () => document.removeEventListener('click', close)
+  }, [menuFor])
 
   function handleExport() {
     const json = usePages.getState().exportData()
@@ -84,13 +115,10 @@ export function Sidebar() {
     const reader = new FileReader()
     reader.onload = () => {
       const text = String(reader.result ?? '')
-      // Import replaces everything — guard the one-click, no-undo overwrite.
       // eslint-disable-next-line no-alert
       if (!window.confirm('Import replaces ALL current data with the contents of this file. Continue?')) {
         return
       }
-      // importData is the single validator (isValidV2); it returns false for
-      // anything malformed or non-v2, so failures are never silent.
       const ok = usePages.getState().importData(text)
       if (!ok) {
         // eslint-disable-next-line no-alert
@@ -101,29 +129,14 @@ export function Sidebar() {
     e.target.value = ''
   }
 
-  // The Sidebar renders as a FLOATING PANEL — a card with rounded
-  // corners and a drop shadow, with margin all around (10px) so the
-  // window background shows through on every side.
-  //
-  // The traffic lights and the panel-toggle button used to live
-  // inside the panel's top edge. They have been promoted to
-  // WindowChrome (see ../components/WindowChrome.tsx), a
-  // window-level absolutely-positioned layer that sits at
-  // (top: 14px, left: 14px) — parked just inside the panel's
-  // top-left corner. The net effect: when the sidebar is open,
-  // the chrome visually reads as the top of the panel. When the
-  // sidebar is collapsed, the panel slides out and the chrome
-  // stays put — close, minimize, maximize, and the toggle are
-  // always reachable.
-  //
-  // Spacing:
-  //   The chrome row is 28px tall and its bottom edge sits at
-  //   y=42px from the window (top: 14px + h: 28px). The brand
-  //   block uses `pt-9` (36px) on top of the wrapper's 10px
-  //   inset, so the top of the brand text lands at y=46px from
-  //   the window — a clean 4px gap below the chrome row. The
-  //   brand block then uses `pb-4` (16px) before the Pages
-  //   section, matching the rhythm below.
+  function handleDelete(id: string, name: string) {
+    setMenuFor(null)
+    // eslint-disable-next-line no-alert
+    if (window.confirm(`Delete "${name}"? This removes the page and its logged data.`)) {
+      deletePage(id)
+    }
+  }
+
   return (
     <div
       className={cn(
@@ -133,12 +146,6 @@ export function Sidebar() {
         'shadow-[0_8px_24px_-8px_rgba(0,0,0,0.5),0_2px_8px_-2px_rgba(0,0,0,0.3)]',
       )}
     >
-      {/* Brand block — sits at the top of the panel. The chrome
-          (traffic lights + sidebar toggle) is a window-level
-          layer above this, not a child of the panel. pt-9
-          reserves space so the brand text sits with breathing
-          room below the 28px chrome row. data-app-chrome opts
-          the brand out of text selection (see index.css). */}
       <div data-app-chrome className="px-5 pt-9 pb-4 select-none">
         <div className="flex items-baseline gap-2">
           <span className="iz-display text-[17px] text-[var(--text)] tracking-tight">
@@ -148,37 +155,81 @@ export function Sidebar() {
         <span className="iz-label mt-1 block">v0.2 · desktop</span>
       </div>
 
-      {/* Pages section — flex-1 so it claims all the space between brand and footer. */}
       <div className="px-3 pt-2 pb-3 flex-1 min-h-0">
         <ScrollArea className="h-full w-full">
-        <div className="flex items-center gap-2 px-2 mb-2">
-          <span className="iz-label">Pages</span>
-          <div className="flex-1 h-px bg-[var(--border)]" />
-        </div>
-        <nav className="flex flex-col gap-0.5">
-          {BUILT_IN_PAGES.map((page) => (
-            <NavLink
-              key={page.id}
-              to={page.path}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] relative',
-                  'border-l-2 transition-colors duration-[var(--motion-fast)]',
-                  isActive
-                    ? 'bg-white/[0.04] border-l-[var(--accent-1)] text-[var(--text)]'
-                    : 'border-l-transparent text-[var(--text-muted)] hover:text-[var(--text-dim)] hover:bg-white/[0.02]',
-                )
-              }
-            >
-              <span className="w-4 h-4 shrink-0">{page.icon}</span>
-              <span>{page.label}</span>
-            </NavLink>
-          ))}
-        </nav>
+          <div className="flex items-center gap-2 px-2 mb-2">
+            <span className="iz-label">Pages</span>
+            <div className="flex-1 h-px bg-[var(--border)]" />
+          </div>
+          <nav className="flex flex-col gap-0.5">
+            {order.map((id) => {
+              const page = pages[id]
+              if (!page) return null
+              const def = page.def
+              return (
+                <div key={id} className="relative group">
+                  <NavLink
+                    to={`/p/${id}`}
+                    className={({ isActive }) =>
+                      cn(
+                        'flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px]',
+                        'border-l-2 transition-colors duration-[var(--motion-fast)]',
+                        isActive
+                          ? 'bg-white/[0.04] border-l-[var(--accent-1)] text-[var(--text)]'
+                          : 'border-l-transparent text-[var(--text-muted)] hover:text-[var(--text-dim)] hover:bg-white/[0.02]',
+                      )
+                    }
+                  >
+                    <span className="w-4 h-4 shrink-0 flex items-center justify-center">
+                      <PageIcon id={id} iconPath={def.iconPath} emoji={def.emoji} />
+                    </span>
+                    <span className="truncate">{def.name}</span>
+                  </NavLink>
+
+                  {/* ⋯ menu trigger — appears on row hover */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      e.preventDefault()
+                      setMenuFor(menuFor === id ? null : id)
+                    }}
+                    className={cn(
+                      'absolute right-1.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md',
+                      'iz-mono text-[14px] text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-white/[0.05]',
+                      'opacity-0 group-hover:opacity-100 transition-opacity duration-[var(--motion-fast)]',
+                      menuFor === id && 'opacity-100',
+                    )}
+                    title="Page actions"
+                  >
+                    ⋯
+                  </button>
+
+                  {menuFor === id && (
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className={cn(
+                        'absolute right-1.5 top-[calc(100%-4px)] z-30 min-w-[120px]',
+                        'iz-panel rounded-md border border-[var(--border)] py-1',
+                        'shadow-[0_8px_24px_-8px_rgba(0,0,0,0.5)]',
+                      )}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(id, def.name)}
+                        className="w-full text-left px-3 py-1.5 text-[12px] text-[var(--text-dim)] hover:text-[var(--text)] hover:bg-white/[0.04] transition-colors duration-[var(--motion-fast)]"
+                      >
+                        Delete page
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </nav>
         </ScrollArea>
       </div>
 
-      {/* Footer — export / import. */}
       <div className="px-3 py-3 border-t border-[var(--border)] flex flex-col gap-0.5">
         <span className="iz-label px-3 mb-1">Data</span>
         <NavLink
@@ -207,7 +258,7 @@ export function Sidebar() {
           )}
         >
           <span className="iz-mono w-4 inline-flex justify-center">↓</span>
-          Export data
+          Export backup
         </button>
         <button
           type="button"
@@ -218,7 +269,7 @@ export function Sidebar() {
           )}
         >
           <span className="iz-mono w-4 inline-flex justify-center">↑</span>
-          Import data
+          Import backup
         </button>
         <input
           ref={fileRef}
