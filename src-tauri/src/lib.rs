@@ -1,5 +1,4 @@
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
-use tauri::{Manager, RunEvent, WindowEvent};
 
 /// Returns the app version baked in at compile time (from Cargo.toml).
 /// The only Rust command Phase 2 needs; more arrive in Phase 3.
@@ -103,24 +102,36 @@ pub fn run() {
             app.set_menu(menu)?;
             Ok(())
         })
-        .on_window_event(|window, event| {
+        .on_window_event(|_window, _event| {
             // Real-macOS red-button behavior: hide the window instead of
             // quitting the process. The dock icon stays; RunEvent::Reopen
             // (below) re-shows the window when the dock icon is clicked.
             // ⌘Q / menu → Quit still fully quits.
-            if let WindowEvent::CloseRequested { api, .. } = event {
-                let _ = window.hide();
+            //
+            // macOS-only: Windows/Linux have no dock or Reopen event, so a
+            // hidden-on-close window would be unrecoverable. There, the
+            // default (close → window closes → app exits) is the right thing.
+            #[cfg(target_os = "macos")]
+            if let tauri::WindowEvent::CloseRequested { api, .. } = _event {
+                let _ = _window.hide();
                 api.prevent_close();
             }
         })
         .invoke_handler(tauri::generate_handler![app_version])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
-        .run(|app_handle, event| {
-            if let RunEvent::Reopen { .. } = event {
-                if let Some(window) = app_handle.get_webview_window("main") {
-                    let _ = window.show();
-                    let _ = window.set_focus();
+        .run(|_app_handle, _event| {
+            // macOS-only: clicking the dock icon after the window was hidden
+            // on close re-shows and focuses it. RunEvent::Reopen and the
+            // dock paradigm only exist on macOS.
+            #[cfg(target_os = "macos")]
+            {
+                use tauri::Manager;
+                if let tauri::RunEvent::Reopen { .. } = _event {
+                    if let Some(window) = _app_handle.get_webview_window("main") {
+                        let _ = window.show();
+                        let _ = window.set_focus();
+                    }
                 }
             }
         });
