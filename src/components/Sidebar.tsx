@@ -51,6 +51,16 @@ function ReadingIcon() {
   )
 }
 
+function MarketIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"
+      strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+      <path d="M5 5.5V5a3 3 0 0 1 6 0v.5" />
+      <path d="M3.5 5.5h9l-.7 7.4a1 1 0 0 1-1 .9H5.2a1 1 0 0 1-1-.9Z" />
+    </svg>
+  )
+}
+
 function GearIcon() {
   return (
     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"
@@ -346,6 +356,23 @@ export function Sidebar() {
 
       <div className="px-3 py-3 border-t border-[var(--border)] flex flex-col gap-0.5">
         <span className="iz-label px-3 mb-1">Data</span>
+        <NavLink
+          to="/marketplace"
+          className={({ isActive }) =>
+            cn(
+              'flex items-center gap-2.5 px-3 py-1.5 rounded-md text-[12px]',
+              'transition-colors duration-[var(--motion-fast)]',
+              isActive
+                ? 'text-[var(--text)] bg-white/[0.04]'
+                : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-white/[0.03]',
+            )
+          }
+        >
+          <span className="w-4 inline-flex justify-center">
+            <MarketIcon />
+          </span>
+          Marketplace
+        </NavLink>
         <NavLink
           to="/settings"
           className={({ isActive }) =>

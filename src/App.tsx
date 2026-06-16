@@ -7,6 +7,7 @@ import { ScrollArea } from './components/ScrollArea'
 import { HelpOverlay } from './components/HelpOverlay'
 import { PageRoute } from './components/PageRoute'
 import SettingsPage from './pages/SettingsPage'
+import MarketplacePage from './pages/MarketplacePage'
 import { useWindowDrag } from './hooks/useWindowDrag'
 import { useUi } from './store/ui'
 import { cn } from './lib/cn'
@@ -116,6 +117,7 @@ export default function App() {
                 <Route path="/" element={<PageRoute />} />
                 <Route path="/p/:pageId" element={<PageRoute />} />
                 <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/marketplace" element={<MarketplacePage />} />
                 <Route path="/pullups" element={<Navigate to="/p/pullups" replace />} />
                 <Route path="/water" element={<Navigate to="/p/water" replace />} />
                 <Route path="/sleep" element={<Navigate to="/p/sleep" replace />} />

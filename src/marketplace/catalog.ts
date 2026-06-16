@@ -1,0 +1,171 @@
+import type { CatalogEntry, PageFile } from './types'
+
+/**
+ * The bundled starter catalog — ships inside the app so the Marketplace is
+ * fully populated and usable offline, with no network and no account. The
+ * remote GitHub registry (see registry.ts) is layered on top of this; if it
+ * is unreachable, these entries stand alone.
+ *
+ * Each page is authored to render AND log correctly under the current blocks:
+ *   • entryLog pages keep an integer-valued primary (count/duration), since
+ *     the additive logger floors its input and rejects non-positive numbers.
+ *   • dailyRecord pages carry exactly one duration + one rating field (the
+ *     shape the DailyRecord block requires).
+ * Between them they exercise count, duration and rating fields, both loggers,
+ * and atLeast + range targets — a working tour of the page engine.
+ *
+ * Keep `registry/index.json` in sync with this set (it is the published copy
+ * the remote loader fetches). See registry/README.md.
+ */
+
+const file = (def: unknown): PageFile => ({ kind: 'life-dashboard/page', format: 1, def })
+
+export const BUNDLED_CATALOG: CatalogEntry[] = [
+  {
+    id: 'meditation',
+    author: 'Life-Dashboard',
+    description: 'Build a daily stillness habit. Log each sit and watch your minutes stack up.',
+    tags: ['mindfulness', 'wellbeing', 'habit'],
+    page: file({
+      schemaVersion: 1,
+      id: 'meditation',
+      templateId: 'community:meditation',
+      version: 1,
+      name: 'Meditation',
+      emoji: '🧘',
+      iconPath: 'M8 3a1.4 1.4 0 1 0 0 2.8 1.4 1.4 0 0 0 0-2.8Z M4 12c0-2.2 1.8-3.6 4-3.6s4 1.4 4 3.6 M4 12h8 M5 9l-1.5 1.2 M11 9l1.5 1.2',
+      fields: [{ key: 'minutes', type: 'duration', label: 'Minutes', unit: 'min', step: 5, default: 10 }],
+      primaryMetric: { field: 'minutes', agg: 'sum' },
+      target: { kind: 'atLeast', value: 20 },
+      blocks: [
+        { type: 'hero' },
+        { type: 'entryLog' },
+        { type: 'statRow' },
+        { type: 'heatmap' },
+        { type: 'trend', metric: { field: 'minutes', agg: 'sum' } },
+      ],
+    }),
+  },
+  {
+    id: 'pushups',
+    author: 'Life-Dashboard',
+    description: 'A simple daily pushup challenge. Add sets as you go and chase a 100-rep day.',
+    tags: ['fitness', 'strength', 'challenge'],
+    page: file({
+      schemaVersion: 1,
+      id: 'pushups',
+      templateId: 'community:pushups',
+      version: 1,
+      name: 'Pushups',
+      emoji: '🤸',
+      iconPath: 'M3 12h10 M5.5 12l1.3-3.2 M6.8 8.8l3.2.6 M10 9.4l1.8 2.6 M6.5 8a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z',
+      fields: [{ key: 'reps', type: 'count', label: 'Reps', unit: 'reps', step: 1, default: 10 }],
+      primaryMetric: { field: 'reps', agg: 'sum' },
+      target: { kind: 'atLeast', value: 100 },
+      blocks: [
+        { type: 'hero' },
+        { type: 'entryLog' },
+        { type: 'statRow' },
+        { type: 'heatmap' },
+      ],
+    }),
+  },
+  {
+    id: 'steps',
+    author: 'Life-Dashboard',
+    description: 'Track your daily steps toward a 10,000-step goal, with a streak heatmap.',
+    tags: ['fitness', 'movement', 'daily'],
+    page: file({
+      schemaVersion: 1,
+      id: 'steps',
+      templateId: 'community:steps',
+      version: 1,
+      name: 'Steps',
+      emoji: '👟',
+      iconPath: 'M5 4.2c-1 0-1.6 1.2-1.6 2.6S3.8 9.6 5 9.6 6.4 8.4 6.4 7 5.9 4.2 5 4.2Z M10.6 7.2c-1 0-1.5 1.1-1.5 2.4s.5 2.2 1.5 2.2 1.5-1 1.5-2.3-.5-2.3-1.5-2.3Z',
+      fields: [{ key: 'steps', type: 'count', label: 'Steps', unit: 'steps', step: 500, default: 1000 }],
+      primaryMetric: { field: 'steps', agg: 'sum' },
+      target: { kind: 'atLeast', value: 10000 },
+      blocks: [
+        { type: 'hero' },
+        { type: 'entryLog' },
+        { type: 'statRow' },
+        { type: 'heatmap' },
+        { type: 'trend', metric: { field: 'steps', agg: 'sum' } },
+      ],
+    }),
+  },
+  {
+    id: 'deep-work',
+    author: 'Life-Dashboard',
+    description: 'Protect focused, distraction-free hours. Aim for 2–4 hours of deep work a day.',
+    tags: ['focus', 'productivity', 'work'],
+    page: file({
+      schemaVersion: 1,
+      id: 'deep-work',
+      templateId: 'community:deep-work',
+      version: 1,
+      name: 'Deep Work',
+      emoji: '🎯',
+      iconPath: 'M8 2.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z M8 5.4a2.6 2.6 0 1 0 0 5.2 2.6 2.6 0 0 0 0-5.2Z M8 7.7a.3.3 0 1 0 0 .6.3.3 0 0 0 0-.6Z',
+      fields: [{ key: 'minutes', type: 'duration', label: 'Minutes', unit: 'min', step: 15, default: 30 }],
+      primaryMetric: { field: 'minutes', agg: 'sum' },
+      target: { kind: 'range', value: 120, max: 240 },
+      blocks: [
+        { type: 'hero' },
+        { type: 'entryLog' },
+        { type: 'statRow' },
+        { type: 'heatmap' },
+        { type: 'trend', metric: { field: 'minutes', agg: 'sum' } },
+      ],
+    }),
+  },
+  {
+    id: 'workout',
+    author: 'Life-Dashboard',
+    description: 'Log every training session and stack up your minutes toward a daily 30.',
+    tags: ['fitness', 'strength', 'daily'],
+    page: file({
+      schemaVersion: 1,
+      id: 'workout',
+      templateId: 'community:workout',
+      version: 1,
+      name: 'Workout',
+      emoji: '🏋️',
+      iconPath: 'M3 6.2v3.6 M4.6 5.2v5.6 M11.4 5.2v5.6 M13 6.2v3.6 M4.6 8h6.8',
+      fields: [{ key: 'minutes', type: 'duration', label: 'Minutes', unit: 'min', step: 5, default: 30 }],
+      primaryMetric: { field: 'minutes', agg: 'sum' },
+      target: { kind: 'atLeast', value: 30 },
+      blocks: [
+        { type: 'hero' },
+        { type: 'entryLog' },
+        { type: 'statRow' },
+        { type: 'heatmap' },
+        { type: 'trend', metric: { field: 'minutes', agg: 'sum' } },
+      ],
+    }),
+  },
+  {
+    id: 'cold-shower',
+    author: 'Life-Dashboard',
+    description: "Keep a cold-shower streak alive. One log a day; don't break the chain.",
+    tags: ['habit', 'discipline', 'wellbeing'],
+    page: file({
+      schemaVersion: 1,
+      id: 'cold-shower',
+      templateId: 'community:cold-shower',
+      version: 1,
+      name: 'Cold Shower',
+      emoji: '🚿',
+      iconPath: 'M8 2v12 M2.8 5l10.4 6 M13.2 5L2.8 11 M8 2l-1.8 1.6 M8 2l1.8 1.6 M8 14l-1.8-1.6 M8 14l1.8-1.6',
+      fields: [{ key: 'sessions', type: 'count', label: 'Sessions', unit: 'session', step: 1, default: 1 }],
+      primaryMetric: { field: 'sessions', agg: 'sum' },
+      target: { kind: 'atLeast', value: 1 },
+      blocks: [
+        { type: 'hero' },
+        { type: 'entryLog' },
+        { type: 'heatmap' },
+      ],
+    }),
+  },
+]
