@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Life-Dashboard — Icon Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@300;400;500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  /* ── App design tokens (verbatim from src/index.css) ── */
+  :root {
+    --bg: #06040C;
+    --surface: #0E0B18;
+    --text: #E8E4F0;
+    --text-dim: #A1A1AA;
+    --text-muted: #71717A;
+    --border: rgba(255, 255, 255, 0.06);
+    --border-active: rgba(167, 139, 250, 0.25);
+    --accent-1: #C4B5FD;
+    --accent-2: #F472B6;
+    --accent-3: #FBBF24;
+    --radius: 14px;
+    --font-display: 'Fraunces', serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  /* Aurora wash — same recipe as the app, just static */
+  .aurora {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 78% 18%, rgba(196,181,253,0.18) 0%, transparent 70%),
+      radial-gradient(ellipse 55% 45% at 18% 85%, rgba(244,114,182,0.12) 0%, transparent 70%),
+      radial-gradient(ellipse 70% 50% at 50% 50%, rgba(167,139,250,0.05) 0%, transparent 70%);
+  }
+  .grain {
+    position: fixed; inset: 0; pointer-events: none; z-index: 1;
+    opacity: 0.022;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Layout */
+  main {
+    position: relative; z-index: 2;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 96px 48px 120px;
+  }
+
+  /* Type */
+  .eyebrow { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-1);
+         box-shadow: 0 0 6px 1px color-mix(in srgb, var(--accent-1) 50%, transparent); }
+  .label { font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+           letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-muted); }
+  h1 { font-family: var(--font-display); font-weight: 300; font-size: 76px; line-height: 1;
+       letter-spacing: -0.015em; margin: 0 0 18px;
+       background: linear-gradient(135deg, var(--accent-1), var(--accent-2), var(--accent-3));
+       -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lede { font-size: 17px; line-height: 1.55; color: var(--text-dim); max-width: 720px; margin: 0; }
+
+  /* Section */
+  section { margin-top: 88px; }
+  .section-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 28px; }
+  .section-head h2 { font-family: var(--font-display); font-weight: 300; font-size: 32px;
+                     letter-spacing: -0.01em; margin: 0; }
+  .section-head .meta { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);
+                        letter-spacing: 0.04em; }
+  .divider { flex: 1; height: 1px; background: var(--border); }
+
+  /* Hero */
+  .hero {
+    display: grid; grid-template-columns: 1.1fr 1fr; gap: 64px;
+    align-items: center;
+    margin-top: 64px;
+    padding: 56px;
+    background: rgba(14, 11, 24, 0.6);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .hero .text .iz-display { font-family: var(--font-display); }
+  .hero p { color: var(--text-dim); font-size: 15px; line-height: 1.6; margin: 18px 0 0; }
+  .hero p strong { color: var(--text); font-weight: 500; }
+  .hero .icon-stage {
+    display: flex; align-items: center; justify-content: center;
+    aspect-ratio: 1;
+    border-radius: 24px;
+    background: radial-gradient(ellipse at 50% 30%, rgba(196,181,253,0.08), transparent 60%);
+  }
+  .hero .icon-stage svg { width: 78%; height: 78%; }
+
+  /* Size matrix */
+  .size-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 18px;
+  }
+  .size-cell {
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+    gap: 16px;
+    padding: 28px 18px 18px;
+    background: rgba(14, 11, 24, 0.5);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    min-height: 180px;
+  }
+  .size-cell .swatch { display: flex; align-items: center; justify-content: center; flex: 1; }
+  .size-cell .px {
+    font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .size-cell img { display: block; }
+
+  /* Context mockups */
+  .context-row { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 24px; }
+
+  .mock {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: rgba(14, 11, 24, 0.5);
+  }
+  .mock-head { padding: 14px 18px; border-bottom: 1px solid var(--border);
+               display: flex; align-items: center; justify-content: space-between; }
+  .mock-head .label { font-size: 9px; }
+  .mock-body { padding: 24px; }
+
+  /* Dock mock — horizontal strip with icon centered */
+  .dock {
+    display: flex; align-items: flex-end; gap: 14px; justify-content: center;
+    padding: 18px 12px 14px;
+    background: linear-gradient(to top, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+    border-radius: 12px;
+  }
+  .dock-app { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .dock-app img { display: block; box-shadow: 0 6px 14px -6px rgba(0,0,0,0.6); }
+  .dock-app .name { font-size: 9px; font-family: var(--font-mono); color: var(--text-muted);
+                    letter-spacing: 0.04em; max-width: 56px; text-align: center; overflow: hidden;
+                    text-overflow: ellipsis; white-space: nowrap; }
+  .dock-app.active .name { color: var(--accent-1); }
+  .dock-dot { width: 4px; height: 4px; border-radius: 50%; background: rgba(255,255,255,0.18); }
+  .dock-app.active .dock-dot { background: var(--accent-1);
+                                box-shadow: 0 0 6px 1px color-mix(in srgb, var(--accent-1) 60%, transparent); }
+
+  /* Launchpad mock */
+  .launchpad {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px 14px;
+    padding: 8px;
+  }
+  .launchpad .dock-app { gap: 8px; }
+  .launchpad .name { font-family: var(--font-body); font-size: 11px; color: var(--text);
+                     max-width: 70px; font-weight: 400; }
+
+  /* App switcher mock (macOS Cmd+Tab) */
+  .switcher {
+    display: flex; align-items: center; justify-content: center; gap: 18px;
+    padding: 30px 20px;
+  }
+  .switcher img { display: block; opacity: 0.7; transition: opacity 200ms ease; }
+  .switcher img.active { opacity: 1; transform: scale(1.18); }
+
+  /* Light + dark background test */
+  .bg-test { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .bg-card {
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 48px;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 220px;
+  }
+  .bg-card.dark { background: var(--bg); }
+  .bg-card.surface { background: var(--surface); }
+  .bg-card.aurora {
+    background:
+      radial-gradient(ellipse at 78% 18%, rgba(196,181,253,0.18) 0%, transparent 70%),
+      radial-gradient(ellipse at 18% 85%, rgba(244,114,182,0.12) 0%, transparent 70%),
+      var(--bg);
+  }
+  .bg-card.light { background: #F2F2F7; }
+  .bg-card.light .label, .bg-card.light .meta { color: rgba(0,0,0,0.5); }
+  .bg-card img { width: 128px; height: 128px; }
+
+  /* Wordmark */
+  .wordmark {
+    display: flex; align-items: center; gap: 18px; padding: 32px 40px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius);
+    max-width: max-content;
+  }
+  .wordmark .icon { width: 56px; height: 56px; }
+  .wordmark .text { font-family: var(--font-display); font-weight: 300;
+                    font-size: 28px; letter-spacing: -0.01em; }
+  .wordmark .text em { font-style: italic; color: var(--text-dim); font-weight: 300; }
+
+  /* Code block */
+  pre {
+    font-family: var(--font-mono); font-size: 12px; line-height: 1.65;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    overflow-x: auto;
+    color: var(--text-dim);
+    margin: 0;
+  }
+  pre .tag { color: #F472B6; }
+  pre .attr { color: #C4B5FD; }
+  pre .val { color: #FBBF24; }
+  pre .com { color: #71717A; font-style: italic; }
+
+  /* Notes */
+  .notes { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .note {
+    padding: 24px 26px;
+    background: rgba(14, 11, 24, 0.4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .note .label { margin-bottom: 12px; display: block; }
+  .note p { margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--text-dim); }
+  .note p strong { color: var(--text); font-weight: 500; }
+
+  @media (max-width: 880px) {
+    main { padding: 56px 24px 80px; }
+    h1 { font-size: 48px; }
+    .hero { grid-template-columns: 1fr; padding: 32px; gap: 36px; }
+    .context-row { grid-template-columns: 1fr; }
+    .bg-test { grid-template-columns: 1fr; }
+    .notes { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="aurora"></div>
+<div class="grain"></div>
+
+<main>
+  <!-- ── Header ── -->
+  <div class="eyebrow">
+    <span class="dot"></span>
+    <span class="label">Icon Prototype · v1</span>
+    <span class="label" style="margin-left:auto;">2026-06-16</span>
+  </div>
+  <h1>The Life Grid</h1>
+  <p class="lede">A 5×5 abstraction of the app's signature activity heatmap, set on a true iOS/macOS squircle in the project's exact palette. Cells rise in a "rising-tide" pattern from faint violet in the top-left to a violet→pink→amber peak in the bottom-right — <em>today</em>.</p>
+
+  <!-- ── Hero ── -->
+  <div class="hero">
+    <div class="text">
+      <div class="eyebrow">
+        <span class="dot"></span>
+        <span class="label">Master · 1024×1024</span>
+      </div>
+      <h2 class="iz-display" style="font-size: 44px; font-weight: 300; letter-spacing: -0.01em; margin: 0 0 6px;">
+        Heatmap, abstracted.
+      </h2>
+      <p>The heatmap is the only visual that defines this product. The icon lifts that one idea, reduces it to a 5×5 grid, and stages it in the same dark, aurora-lit world the dashboard lives in. No text. No monogram. Just the data shape — and a single cell that says <strong>you're here</strong>.</p>
+    </div>
+    <div class="icon-stage">
+      <object data="icon.svg" type="image/svg+xml" aria-label="Life-Dashboard icon" style="width:100%;height:100%;"></object>
+    </div>
+  </div>
+
+  <!-- ── Size matrix ── -->
+  <section>
+    <div class="section-head">
+      <h2>Size matrix</h2>
+      <span class="meta">16 → 1024</span>
+      <div class="divider"></div>
+      <span class="label">Reads at every scale</span>
+    </div>
+    <div class="size-grid">
+      <div class="size-cell"><div class="swatch"><img src="icon.svg" width="16"  height="16"  alt="16px"></div><span class="px">16 · favicon</span></div>
+      <div class="size-cell"><div class="swatch"><img src="icon.svg" width="24"  height="24"  alt="24px"></div><span class="px">24 · toolbar</span></div>
+      <div class="size-cell"><div class="swatch"><img src="icon.svg" width="32"  height="32"  alt="32px"></div><span class="px">32 · small</span></div>
+      <div class="size-cell"><div class="swatch"><img src="icon.svg" width="48"  height="48"  alt="48px"></div><span class="px">48 · sidebar</span></div>
+      <div class="size-cell"><div class="swatch"><img src="icon.svg" width="64"  height="64"  alt="64px"></div><span class="px">64 · @1x</span></div>
+      <div class="size-cell"><div class="swatch"><img src="icon.svg" width="96"  height="96"  alt="96px"></div><span class="px">96 · dock small</span></div>
+      <div class="size-cell"><div class="swatch"><img src="icon.svg" width="128" height="128" alt="128px"></div><span class="px">128 · @2x</span></div>
+      <div class="size-cell"><div class="swatch"><img src="icon.svg" width="192" height="192" alt="192px"></div><span class="px">192 · dock large</span></div>
+      <div class="size-cell"><div class="swatch"><img src="icon.svg" width="256" height="256" alt="256px"></div><span class="px">256 · @1x retina</span></div>
+      <div class="size-cell"><div class="swatch"><img src="icon.svg" width="512" height="512" alt="512px"></div><span class="px">512 · @2x retina</span></div>
+    </div>
+  </section>
+
+  <!-- ── Context mockups ── -->
+  <section>
+    <div class="section-head">
+      <h2>In context</h2>
+      <span class="meta">macOS surfaces</span>
+      <div class="divider"></div>
+    </div>
+    <div class="context-row">
+      <!-- Dock -->
+      <div class="mock">
+        <div class="mock-head">
+          <span class="label">Dock</span>
+          <span class="label">active</span>
+        </div>
+        <div class="mock-body">
+          <div class="dock">
+            <div class="dock-app"><img src="https://img.icons8.com/fluency/48/finder.png" width="48" height="48" alt="Finder"><div class="dock-dot"></div></div>
+            <div class="dock-app"><img src="https://img.icons8.com/fluency/48/safari.png" width="48" height="48" alt="Safari"><div class="dock-dot"></div></div>
+            <div class="dock-app"><img src="https://img.icons8.com/fluency/48/messages.png" width="48" height="48" alt="Messages"><div class="dock-dot"></div></div>
+            <div class="dock-app"><img src="https://img.icons8.com/fluency/48/music.png" width="48" height="48" alt="Music"><div class="dock-dot"></div></div>
+            <div class="dock-app active"><img src="icon.svg" width="48" height="48" alt="Life-Dashboard"><div class="dock-dot"></div><div class="name">Life-Dashboard</div></div>
+            <div class="dock-app"><img src="https://img.icons8.com/fluency/48/terminal.png" width="48" height="48" alt="Terminal"><div class="dock-dot"></div></div>
+            <div class="dock-app"><img src="https://img.icons8.com/fluency/48/settings.png" width="48" height="48" alt="Settings"><div class="dock-dot"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Launchpad -->
+      <div class="mock">
+        <div class="mock-head">
+          <span class="label">Launchpad</span>
+          <span class="label">thumbnail</span>
+        </div>
+        <div class="mock-body">
+          <div class="launchpad">
+            <div class="dock-app"><img src="https://img.icons8.com/fluency/48/finder.png" width="56" height="56"><div class="name">Finder</div></div>
+            <div class="dock-app"><img src="https://img.icons8.com/fluency/48/safari.png" width="56" height="56"><div class="name">Safari</div></div>
+            <div class="dock-app"><img src="https://img.icons8.com/fluency/48/messages.png" width="56" height="56"><div class="name">Messages</div></div>
+            <div class="dock-app"><img src="https://img.icons8.com/fluency/48/music.png" width="56" height="56"><div class="name">Music</div></div>
+            <div class="dock-app"><img src="https://img.icons8.com/fluency/48/calendar.png" width="56" height="56"><div class="name">Calendar</div></div>
+            <div class="dock-app"><img src="https://img.icons8.com/fluency/48/notes.png" width="56" height="56"><div class="name">Notes</div></div>
+            <div class="dock-app"><img src="icon.svg" width="56" height="56" alt="Life-Dashboard"><div class="name">Life-Dashboard</div></div>
+            <div class="dock-app"><img src="https://img.icons8.com/fluency/48/calculator.png" width="56" height="56"><div class="name">Calculator</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- App switcher -->
+      <div class="mock">
+        <div class="mock-head">
+          <span class="label">⌘ Tab</span>
+          <span class="label">switcher</span>
+        </div>
+        <div class="mock-body">
+          <div class="switcher">
+            <img src="https://img.icons8.com/fluency/48/safari.png" width="60" height="60" alt="Safari">
+            <img src="https://img.icons8.com/fluency/48/music.png" width="60" height="60" alt="Music">
+            <img src="icon.svg" class="active" width="60" height="60" alt="Life-Dashboard">
+            <img src="https://img.icons8.com/fluency/48/terminal.png" width="60" height="60" alt="Terminal">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Background test ── -->
+  <section>
+    <div class="section-head">
+      <h2>Background test</h2>
+      <span class="meta">on every surface</span>
+      <div class="divider"></div>
+    </div>
+    <div class="bg-test">
+      <div class="bg-card dark">
+        <img src="icon.svg" alt="On app background">
+      </div>
+      <div class="bg-card surface">
+        <img src="icon.svg" alt="On surface">
+      </div>
+      <div class="bg-card aurora">
+        <img src="icon.svg" alt="On aurora">
+      </div>
+      <div class="bg-card light">
+        <img src="icon.svg" alt="On light surface">
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Wordmark ── -->
+  <section>
+    <div class="section-head">
+      <h2>Wordmark</h2>
+      <span class="meta">splash / about / dock label</span>
+      <div class="divider"></div>
+    </div>
+    <div class="wordmark">
+      <img class="icon" src="icon.svg" alt="">
+      <div class="text">Life<em>·</em>Dashboard</div>
+    </div>
+  </section>
+
+  <!-- ── Code preview ── -->
+  <section>
+    <div class="section-head">
+      <h2>Source</h2>
+      <span class="meta">8.2 KB · pure SVG</span>
+      <div class="divider"></div>
+    </div>
+<pre><span class="com">&lt;!-- 1024×1024 master. viewBox handles every scale from favicon → .icns. --&gt;</span>
+<span class="tag">&lt;svg</span> <span class="attr">xmlns</span>=<span class="val">"http://www.w3.org/2000/svg"</span> <span class="attr">viewBox</span>=<span class="val">"0 0 1024 1024"</span> <span class="attr">width</span>=<span class="val">"1024"</span> <span class="attr">height</span>=<span class="val">"1024"</span><span class="tag">&gt;</span>
+
+  <span class="com">&lt;!-- macOS squircle: rx=229 rounded rect on a 1024 canvas (22.4% of side) --&gt;</span>
+  <span class="tag">&lt;clipPath</span> <span class="attr">id</span>=<span class="val">"ld-squircle"</span><span class="tag">&gt;</span>
+    <span class="tag">&lt;rect</span> <span class="attr">x</span>=<span class="val">"0"</span> <span class="attr">y</span>=<span class="val">"0"</span> <span class="attr">width</span>=<span class="val">"1024"</span> <span class="attr">height</span>=<span class="val">"1024"</span> <span class="attr">rx</span>=<span class="val">"229"</span> <span class="attr">ry</span>=<span class="val">"229"</span><span class="tag">/&gt;</span>
+  <span class="tag">&lt;/clipPath&gt;</span>
+
+  <span class="tag">&lt;g</span> <span class="attr">clip-path</span>=<span class="val">"url(#ld-squircle)"</span><span class="tag">&gt;</span>
+    <span class="com">&lt;!-- base wash + aurora + 5×5 grid + top shine --&gt;</span>
+  <span class="tag">&lt;/g&gt;</span>
+
+  <span class="com">&lt;!-- 1.5px outer stroke for crispness on light backgrounds --&gt;</span>
+<span class="tag">&lt;/svg&gt;</span></pre>
+  </section>
+
+  <!-- ── Design notes ── -->
+  <section>
+    <div class="section-head">
+      <h2>Design notes</h2>
+      <div class="divider"></div>
+    </div>
+    <div class="notes">
+      <div class="note">
+        <span class="label">01 — Why a heatmap</span>
+        <p>The 7×53 activity grid is the only visual that <strong>uniquely</strong> identifies this product. No other app in the user's dock has one. Lifting it to icon scale gives the brand something a monogram or generic glyph never could: <strong>instant recognition</strong> in the dock, the app switcher, and the favicon.</p>
+      </div>
+      <div class="note">
+        <span class="label">02 — Why 5×5</span>
+        <p>The full heatmap is 7×53. 5×5 is the largest square abstraction that still reads at 16px (where each cell becomes ~2.2px and the grid reads as a single coloured mass). It's <strong>icon scale, not data scale</strong> — the pattern is designed, not generated.</p>
+      </div>
+      <div class="note">
+        <span class="label">03 — The peak cell</span>
+        <p>The bottom-right cell uses the full <strong>violet → pink → amber</strong> gradient (the same one used for hero numbers in the dashboard) and gets a soft pink glow. It's the only cell that "breaks" the pattern — drawing the eye to <em>today</em>, the only cell that matters.</p>
+      </div>
+      <div class="note">
+        <span class="label">04 — The squircle</span>
+        <p>Built from four cubic Bezier segments with control offset 180 (out of 512). The smaller the offset, the fuller the corner — 229 is a perfect circle, 180 is the well-known iOS squircle value. <strong>Long sides, full corners</strong>, the silhouette Apple uses.</p>
+      </div>
+      <div class="note">
+        <span class="label">05 — Palette fidelity</span>
+        <p>Every colour maps directly to a token in <strong>src/index.css</strong>: <code style="font-family:var(--font-mono);color:var(--accent-2)">--bg</code> / <code style="font-family:var(--font-mono);color:var(--accent-2)">--accent-1</code> / <code style="font-family:var(--font-mono);color:var(--accent-2)">--accent-2</code> / <code style="font-family:var(--font-mono);color:var(--accent-2)">--accent-3</code>. If the brand ever shifts, the icon shifts with it.</p>
+      </div>
+      <div class="note">
+        <span class="label">06 — No text, no monogram</span>
+        <p>At 16px, text is illegible. At 1024px it's redundant. A single, designed mark ages better than a letterform and travels to favicon, dock, app switcher, About panel, and splash screen <strong>without modification</strong>.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+</body>
+</html>
