@@ -2,6 +2,20 @@
 
 Local-first dashboard for personal life challenges. Phase 1 ships a single tracker: the **100 pullups per day** challenge.
 
+## Download
+
+Grab the latest build from the [**Releases**](../../releases/latest) page:
+
+- **macOS** — `Life-Dashboard_<version>_universal.dmg` (works on both Apple Silicon and Intel)
+- **Windows** — `Life-Dashboard_<version>_x64-setup.exe`
+
+The builds are **unsigned** (no paid Apple/Windows code-signing certificate), so each OS shows a one-time "unknown developer" warning. To open it:
+
+- **macOS** — after dragging it to Applications, **right-click the app → Open** → Open. (If macOS still refuses, run `xattr -dr com.apple.quarantine "/Applications/Life-Dashboard.app"` once.)
+- **Windows** — on the SmartScreen prompt, click **More info → Run anyway**.
+
+Your data lives only on your machine (`localStorage`); nothing is uploaded.
+
 ## Quickstart
 
 ```bash

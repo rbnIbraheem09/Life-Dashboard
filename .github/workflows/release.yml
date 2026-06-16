@@ -1,0 +1,76 @@
+# Build signed-or-not desktop bundles and attach them to a GitHub Release.
+#
+# Trigger: push a version tag, e.g.
+#     git tag v0.2.0 && git push origin v0.2.0
+# (or run manually from the Actions tab against a tag).
+#
+# Produces, on the resulting Release:
+#   • macOS  — Life-Dashboard_<version>_universal.dmg  (Intel + Apple Silicon)
+#   • Windows — Life-Dashboard_<version>_x64-setup.exe  (NSIS installer)
+#
+# The bundles are UNSIGNED (no Apple Developer / Windows code-signing cert).
+# That's fine for sharing with friends — see the README "Download" section
+# for the one-time Gatekeeper / SmartScreen steps to open them.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch: # manual re-run; select a tag as the ref
+
+jobs:
+  release:
+    permissions:
+      contents: write # create the Release and upload assets
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: '--target universal-apple-darwin --bundles dmg'
+            rust-targets: 'aarch64-apple-darwin,x86_64-apple-darwin'
+          - platform: windows-latest
+            args: '--bundles nsis'
+            rust-targets: ''
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-targets }}
+
+      - name: Cache Rust build
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build and release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Life-Dashboard ${{ github.ref_name }}'
+          releaseBody: |
+            Desktop builds of Life-Dashboard. Download the file for your OS below.
+
+            **macOS** (`.dmg`): unsigned, so the first launch needs one step —
+            right-click the app → Open (or run `xattr -dr com.apple.quarantine /Applications/Life-Dashboard.app`).
+            **Windows** (`-setup.exe`): unsigned, so SmartScreen shows a warning —
+            click "More info" → "Run anyway".
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}
