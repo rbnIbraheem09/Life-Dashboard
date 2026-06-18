@@ -249,7 +249,7 @@ export function Sidebar() {
             Life-Dashboard
           </span>
         </div>
-        <span className="iz-label mt-1 block">v0.2 · desktop</span>
+        <span className="iz-label mt-1 block">v0.3 · desktop</span>
       </div>
 
       <div className="px-3 pt-2 pb-3 flex-1 min-h-0">
