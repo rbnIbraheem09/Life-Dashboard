@@ -28,8 +28,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # `app` is required alongside `dmg`: the macOS updater artifact
+          # (.app.tar.gz, what latest.json points to) is produced from the app
+          # bundle. With `--bundles dmg` alone, no updater artifact is made and
+          # latest.json gets no macOS entry — so Macs would never self-update.
           - platform: macos-latest
-            args: '--target universal-apple-darwin --bundles dmg'
+            args: '--target universal-apple-darwin --bundles app dmg'
             rust-targets: 'aarch64-apple-darwin,x86_64-apple-darwin'
           - platform: windows-latest
             args: '--bundles nsis'
