@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "note": "Marketplace registry for Life-Dashboard. Each entry is a pure-data page (no code). Generated from src/marketplace/catalog.ts — see registry/README.md.",
+  "note": "Marketplace registry for Life-Dashboard. Each entry is a pure-data page (no code). Bundled starter entries are generated from src/marketplace/catalog.ts; community entries are added via pull request and preserved on regeneration. See registry/README.md.",
   "entries": [
     {
       "id": "meditation",

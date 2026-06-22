@@ -49,13 +49,20 @@ there's no cost to anyone.
 
 ## Maintainers
 
-The starter entries are generated from the app's bundled catalog so the two can
-never drift. After editing `src/marketplace/catalog.ts`:
+The bundled starter entries are generated from the app's bundled catalog so the
+two can never drift. After editing `src/marketplace/catalog.ts`:
 
 ```bash
 npx vite-node scripts/gen-registry.ts
 ```
 
-When you merge community PRs that hand-edit `index.json`, leave those entries in
-place — only the bundled starter entries are regenerated, and the generator
-writes the whole file, so re-run it only when the bundled set itself changes.
+The generator is **non-destructive**: it rewrites only the bundled starter
+entries (from the catalog) and **preserves every community entry** already in
+`index.json` — anything whose `id` isn't part of the bundled set. So merged
+community pages are safe; re-running the generator never drops them. If
+`index.json` exists but is malformed, the generator refuses to overwrite rather
+than risk losing entries.
+
+Merging a community PR therefore needs nothing extra: review the entry (it's
+plain data — the in-app scanner and `parsePageFile` are the validation gates),
+merge, and it's live on everyone's next Marketplace refresh.
