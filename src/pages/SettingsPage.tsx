@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react'
 import { THEMES, useThemeStore, type PanelStyle } from '../store/theme'
+import { useUpdater } from '../store/updater'
 import { cn } from '../lib/cn'
 
 /**
@@ -98,6 +100,134 @@ function SurfaceToggle() {
   )
 }
 
+function UpdatesSection() {
+  const status = useUpdater((s) => s.status)
+  const newVersion = useUpdater((s) => s.newVersion)
+  const storeVersion = useUpdater((s) => s.currentVersion)
+  const notes = useUpdater((s) => s.notes)
+  const progress = useUpdater((s) => s.progress)
+  const error = useUpdater((s) => s.error)
+  const check = useUpdater((s) => s.check)
+  const install = useUpdater((s) => s.install)
+
+  const [version, setVersion] = useState<string | null>(null)
+  useEffect(() => {
+    // Show the running version. Guarded so the browser/dev build doesn't throw.
+    if (typeof window === 'undefined' || !('__TAURI_INTERNALS__' in window)) return
+    import('@tauri-apps/api/app')
+      .then(({ getVersion }) => getVersion())
+      .then(setVersion)
+      .catch(() => {})
+  }, [])
+
+  const current = version ?? storeVersion
+  const busy = status === 'checking' || status === 'downloading' || status === 'ready'
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-4">
+        <span className="iz-label">Updates</span>
+        <div className="flex-1 h-px bg-[var(--border)]" />
+      </div>
+
+      <div className="rounded-[var(--radius)] border border-[var(--border)] bg-white/[0.02] p-5 flex flex-col gap-4">
+        <div className="flex items-center gap-4">
+          <div className="min-w-0">
+            <span className="text-[14px] text-[var(--text)]">Life-Dashboard</span>
+            <span className="block iz-mono text-[11px] text-[var(--text-muted)] mt-0.5">
+              {current ? `Current version v${current}` : 'Desktop app'}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => void check()}
+            disabled={busy}
+            className={cn(
+              'ml-auto text-[13px] font-medium px-4 py-2 rounded-md transition-opacity duration-[var(--motion-fast)]',
+              busy
+                ? 'bg-white/[0.04] text-[var(--text-muted)] cursor-not-allowed'
+                : 'text-[var(--text)] border border-[var(--border-active)] hover:bg-white/[0.04] cursor-pointer',
+            )}
+          >
+            {status === 'checking' ? 'Checking…' : 'Check for updates'}
+          </button>
+        </div>
+
+        {/* state-driven feedback */}
+        {status === 'uptodate' && (
+          <p className="text-[13px] text-[var(--text-dim)]">
+            You’re on the latest version <span className="text-[var(--accent-1)]">✓</span>
+          </p>
+        )}
+
+        {status === 'unsupported' && (
+          <p className="text-[13px] text-[var(--text-dim)]">
+            Automatic updates are available in the desktop app.
+          </p>
+        )}
+
+        {status === 'error' && (
+          <p className="text-[13px]" style={{ color: 'var(--accent-2)' }}>
+            Couldn’t check for updates{error ? `: ${error}` : '.'}
+          </p>
+        )}
+
+        {(status === 'available' || status === 'downloading' || status === 'ready') && (
+          <div className="rounded-[10px] border border-[var(--border)] bg-white/[0.02] p-4 flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <span
+                className="inline-block w-[6px] h-[6px] rounded-full bg-[var(--accent-1)] shrink-0"
+                style={{ boxShadow: '0 0 6px 1px color-mix(in srgb, var(--accent-1) 50%, transparent)' }}
+              />
+              <span className="text-[13px] text-[var(--text)]">
+                Version <span className="iz-mono text-[var(--accent-1)]">{newVersion}</span> is available
+              </span>
+              {status === 'available' && (
+                <button
+                  type="button"
+                  onClick={() => void install()}
+                  className="ml-auto text-[12px] font-medium px-3 py-1.5 rounded-md bg-[var(--text)] text-[var(--bg)] hover:opacity-90 transition-opacity duration-[var(--motion-fast)] cursor-pointer"
+                >
+                  Download & install
+                </button>
+              )}
+            </div>
+
+            {notes && status === 'available' && (
+              <p className="text-[12px] text-[var(--text-dim)] leading-relaxed whitespace-pre-line max-h-[160px] overflow-auto iz-noscroll">
+                {notes}
+              </p>
+            )}
+
+            {status === 'downloading' && (
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-1 rounded-full bg-[color-mix(in_srgb,var(--accent-1)_10%,transparent)] overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-[var(--accent-1)] transition-[width] duration-[var(--motion-fast)]"
+                    style={{ width: `${Math.round(progress * 100)}%` }}
+                  />
+                </div>
+                <span className="iz-mono text-[11px] text-[var(--text-muted)] tabular-nums w-10 text-right">
+                  {Math.round(progress * 100)}%
+                </span>
+              </div>
+            )}
+
+            {status === 'ready' && (
+              <p className="iz-mono text-[12px] text-[var(--text-dim)]">Installed — restarting…</p>
+            )}
+          </div>
+        )}
+
+        <p className="iz-mono text-[11px] text-[var(--text-muted)] leading-relaxed">
+          Updates are verified by signature and only replace the app — your pages and logged data are
+          never touched.
+        </p>
+      </div>
+    </div>
+  )
+}
+
 export default function SettingsPage() {
   return (
     <div className="max-w-[1180px] mx-auto px-9 py-9 flex flex-col gap-8">
@@ -133,6 +263,8 @@ export default function SettingsPage() {
         </div>
         <SurfaceToggle />
       </div>
+
+      <UpdatesSection />
     </div>
   )
 }

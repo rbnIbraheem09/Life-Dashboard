@@ -19,6 +19,16 @@ pub fn run() {
                 )?;
             }
 
+            // Self-update (desktop only). The updater checks the signed
+            // `latest.json` on our GitHub Releases; the process plugin lets the
+            // app relaunch itself after an update installs. Neither exists on
+            // mobile, so they're gated exactly like the macOS window behavior.
+            #[cfg(desktop)]
+            {
+                app.handle().plugin(tauri_plugin_updater::Builder::new().build())?;
+                app.handle().plugin(tauri_plugin_process::init())?;
+            }
+
             // Native macOS menu bar. For Phase 2 the structure is the
             // deliverable: standard items use PredefinedMenuItem so they work
             // out of the box; Phase-3 items (New Page / Export / Import /

@@ -7,3 +7,8 @@ dist/
 .env
 .env.local
 *.tsbuildinfo
+
+# Updater signing keys — never commit. The private key lives only in
+# ~/.life-dashboard-keys and in GitHub Actions secrets.
+*.key
+*.key.pub

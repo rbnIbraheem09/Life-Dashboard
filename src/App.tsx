@@ -8,6 +8,8 @@ import { HelpOverlay } from './components/HelpOverlay'
 import { PageRoute } from './components/PageRoute'
 import SettingsPage from './pages/SettingsPage'
 import MarketplacePage from './pages/MarketplacePage'
+import { UpdateBanner } from './components/UpdateBanner'
+import { useUpdater } from './store/updater'
 import { useWindowDrag } from './hooks/useWindowDrag'
 import { useUi } from './store/ui'
 import { cn } from './lib/cn'
@@ -37,6 +39,14 @@ export default function App() {
   const pinned = useUi((s) => s.sidebarOpen)
   const togglePinned = useUi((s) => s.toggleSidebar)
   const setPinned = useUi((s) => s.setSidebarOpen)
+
+  // Silent self-update check on launch. If a newer signed build exists, the
+  // UpdateBanner surfaces it; failures (offline, no desktop shell) stay quiet.
+  const checkForUpdate = useUpdater((s) => s.check)
+  useEffect(() => {
+    const t = window.setTimeout(() => void checkForUpdate({ silent: true }), 1500)
+    return () => window.clearTimeout(t)
+  }, [checkForUpdate])
 
   // Transient hover-peek — only meaningful while unpinned.
   const [peeking, setPeeking] = useState(false)
@@ -161,6 +171,7 @@ export default function App() {
         </div>
         </div>
       </div>
+      <UpdateBanner />
       <HelpOverlay />
     </BrowserRouter>
   )

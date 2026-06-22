@@ -61,11 +61,21 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Updater signing. With `createUpdaterArtifacts: true` in
+          # tauri.conf.json, these sign the update bundles and let tauri-action
+          # generate + upload `latest.json` (the manifest the in-app updater
+          # reads). The keypair is the project's minisign key; the public half
+          # is baked into the app, the private half lives only in these secrets.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'Life-Dashboard ${{ github.ref_name }}'
           releaseBody: |
             Desktop builds of Life-Dashboard. Download the file for your OS below.
+
+            Once installed, the app keeps itself up to date — Settings → Updates,
+            or it offers the update on launch. Your data is never touched.
 
             **macOS** (`.dmg`): unsigned, so the first launch needs one step —
             right-click the app → Open (or run `xattr -dr com.apple.quarantine /Applications/Life-Dashboard.app`).
